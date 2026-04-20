@@ -12,6 +12,11 @@ export type Screen =
   | 'simulation'
   | 'reports'
   | 'settings'
+  | 'sos'
+  | 'analytics'
+  | 'ml'
+  | 'users'
+  | 'report'
 
 /** Runtime shape from GET /api/ml/metrics-v5 */
 export interface MLMetricsV5 {

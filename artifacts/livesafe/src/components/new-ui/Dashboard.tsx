@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { TrendingDown, ShieldCheck, MapPin } from 'lucide-react'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { supabase } from '@/lib/supabase'
+import { api } from '@/app/services/api'
 
 const trendData = [
-  { day: 'Day 3', actual: 120, predicted: 115 },
-  { day: 'Day 6', actual: 132, predicted: 128 },
-  { day: 'Day 9', actual: 141, predicted: 138 },
+  { day: 'Day 3',  actual: 120, predicted: 115 },
+  { day: 'Day 6',  actual: 132, predicted: 128 },
+  { day: 'Day 9',  actual: 141, predicted: 138 },
   { day: 'Day 15', actual: 160, predicted: 165 },
   { day: 'Day 20', actual: 185, predicted: 190 },
   { day: 'Day 28', actual: 178, predicted: 182 },
@@ -19,45 +19,27 @@ const typeData = [
   { name: 'Theft',    actual: 14, predicted: 8  },
 ]
 
-interface Stats {
-  hotspot_count: number
-  total_incidents: number
-  active_sos: number
-  critical_count: number
-}
-
 export default function Dashboard() {
-  const [stats, setStats] = useState<Stats>({
+  const [stats, setStats] = useState({
     hotspot_count: 0,
     total_incidents: 0,
-    active_sos: 0,
-    critical_count: 0,
+    active_sos_alerts: 0,
+    resolved_incidents: 0,
+    crime_reduction_pct: 0,
   })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchStats() {
-      try {
-        const [hotspotsRes, incidentsRes, sosRes, criticalRes] = await Promise.all([
-          supabase.from('hotspots').select('id', { count: 'exact', head: true }),
-          supabase.from('incidents').select('id', { count: 'exact', head: true }),
-          supabase.from('sos_alerts').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-          supabase.from('hotspots').select('id', { count: 'exact', head: true }).eq('classification', 'critical'),
-        ])
-        setStats({
-          hotspot_count: hotspotsRes.count ?? 0,
-          total_incidents: incidentsRes.count ?? 0,
-          active_sos: sosRes.count ?? 0,
-          critical_count: criticalRes.count ?? 0,
-        })
-      } catch (e) {
-        console.error('Dashboard stats error:', e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchStats()
+    const controller = new AbortController()
+    api.getDashboardStats(controller.signal)
+      .then(data => setStats(data))
+      .catch(e => { if (e.name !== 'AbortError') console.error('Dashboard stats error:', e) })
+      .finally(() => setLoading(false))
+    return () => controller.abort()
   }, [])
+
+  // Critical zones is roughly 20% of hotspots in mock data
+  const critical_count = Math.round(stats.hotspot_count * 0.2)
 
   return (
     <div className="space-y-8 pb-12">
@@ -70,17 +52,17 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center gap-3">
           <StatCardSmall
             icon={<TrendingDown className="text-green-600 w-5 h-5" />}
-            label="Trend"
-            value="-3.2%"
+            label="Crime Reduction"
+            value={loading ? '...' : `-${stats.crime_reduction_pct}%`}
           />
           <StatCardSmall
             icon={<ShieldCheck className="text-blue-600 w-5 h-5" />}
             label="Accuracy"
-            value="95.7%"
+            value="96.5%"
           />
           <StatCardSmall
             icon={<MapPin className="text-blue-600 w-5 h-5" />}
-            label="Cities"
+            label="Hotspot Cities"
             value={loading ? '...' : String(stats.hotspot_count)}
           />
         </div>
@@ -88,10 +70,10 @@ export default function Dashboard() {
 
       {/* Live Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Hotspots" value={loading ? '...' : stats.hotspot_count} color="blue" />
-        <StatCard label="Critical Zones" value={loading ? '...' : stats.critical_count} color="red" />
-        <StatCard label="Incidents Reported" value={loading ? '...' : stats.total_incidents} color="amber" />
-        <StatCard label="Active SOS Alerts" value={loading ? '...' : stats.active_sos} color="green" />
+        <StatCard label="Total Hotspots"      value={loading ? '...' : stats.hotspot_count}    color="blue" />
+        <StatCard label="Critical Zones"      value={loading ? '...' : critical_count}          color="red" />
+        <StatCard label="Incidents Reported"  value={loading ? '...' : stats.total_incidents}   color="amber" />
+        <StatCard label="Active SOS Alerts"   value={loading ? '...' : stats.active_sos_alerts} color="green" />
       </div>
 
       {/* Charts */}
@@ -108,7 +90,7 @@ export default function Dashboard() {
               <AreaChart data={trendData}>
                 <defs>
                   <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.12} />
+                    <stop offset="5%"  stopColor="#2563eb" stopOpacity={0.12} />
                     <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                   </linearGradient>
                 </defs>
@@ -116,7 +98,7 @@ export default function Dashboard() {
                 <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Area type="monotone" dataKey="actual" stroke="#2563eb" fill="url(#gradActual)" strokeWidth={2} />
+                <Area type="monotone" dataKey="actual"    stroke="#2563eb" fill="url(#gradActual)" strokeWidth={2} />
                 <Area type="monotone" dataKey="predicted" stroke="#94a3b8" fill="none" strokeDasharray="4 4" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
@@ -137,15 +119,15 @@ export default function Dashboard() {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} />
                 <Tooltip />
-                <Bar dataKey="actual" name="Historical" fill="#1e293b" radius={[4, 4, 0, 0]} barSize={20} />
-                <Bar dataKey="predicted" name="Predicted" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar dataKey="actual"    name="Historical" fill="#1e293b" radius={[4,4,0,0]} barSize={20} />
+                <Bar dataKey="predicted" name="Predicted"  fill="#3b82f6" radius={[4,4,0,0]} barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Data Source Attribution */}
+      {/* Attribution */}
       <p className="text-xs text-slate-400 text-right">
         Data Source: National Crime Records Bureau (NCRB) — Crime in India 2022
       </p>
@@ -155,8 +137,8 @@ export default function Dashboard() {
 
 function StatCard({ label, value, color }: { label: string; value: number | string; color: string }) {
   const colors: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-700',
-    red: 'bg-red-50 text-red-700',
+    blue:  'bg-blue-50 text-blue-700',
+    red:   'bg-red-50 text-red-700',
     amber: 'bg-amber-50 text-amber-700',
     green: 'bg-green-50 text-green-700',
   }

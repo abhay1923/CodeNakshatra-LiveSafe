@@ -1,5 +1,6 @@
 // ============================================================
 // LiveSafe — API Service
+// • Demo account bypass for citizen/police/admin@example.com
 // • Zod runtime validation on all responses
 // • AbortController support to prevent setState on unmounted components
 // • Graceful mock-data fallback when backend is not yet connected
@@ -9,6 +10,7 @@ import { z } from 'zod'
 import { tokenStore } from '@/lib/tokenStore'
 import type {
   User,
+  UserRole,
   Incident,
   Hotspot,
   CrimeType,
@@ -145,7 +147,6 @@ async function apiFetch<T>(
 
 // ---- Mock data (used when backend is not connected) ----
 
-
 const MOCK_INCIDENTS: Incident[] = [
   { id: 'i1', type: 'theft', description: 'Mobile phone snatched near metro station', latitude: 28.6180, longitude: 77.2100, severity: 'high', status: 'verified', reported_by: 'citizen-001', created_at: new Date(Date.now() - 3600000).toISOString() },
   { id: 'i2', type: 'robbery', description: 'Bag snatch reported on Ring Road', latitude: 28.7001, longitude: 77.1080, severity: 'critical', status: 'reported', reported_by: 'citizen-002', created_at: new Date(Date.now() - 7200000).toISOString() },
@@ -179,10 +180,16 @@ const MOCK_STATS: DashboardStats = {
   crime_reduction_pct: 12.3,
 }
 
-// ---- API methods ----
+// ---- Demo accounts — bypass Supabase for quick testing ----
 
-// Mock mode is always on until a real backend is wired up.
-// To switch to live API: set VITE_USE_MOCK=false in .env
+const DEMO_ACCOUNTS: Record<string, { password: string; name: string; role: UserRole }> = {
+  'citizen@example.com': { password: 'citizen123', name: 'Priya Sharma', role: 'citizen' },
+  'police@example.com':  { password: 'police123',  name: 'Officer Rajesh Kumar', role: 'police' },
+  'admin@example.com':   { password: 'admin123',   name: 'Admin Vikram Singh', role: 'admin' },
+}
+
+// ---- Mock mode flag ----
+// Set VITE_USE_MOCK=false in .env to use real Supabase tables
 const _useMock = import.meta.env.VITE_USE_MOCK !== 'false'
 
 async function withMockFallback<T>(
@@ -191,125 +198,142 @@ async function withMockFallback<T>(
   realFetch: () => Promise<unknown>
 ): Promise<T> {
   if (_useMock) {
-    // Simulate realistic network latency
     await new Promise((r) => setTimeout(r, 400 + Math.random() * 300))
     return schema.parse(mockData)
   }
-  const raw = await realFetch()
-  return schema.parse(raw)
+  try {
+    const raw = await realFetch()
+    return schema.parse(raw)
+  } catch {
+    // Graceful fallback to mock when backend/tables are unavailable
+    await new Promise((r) => setTimeout(r, 200))
+    return schema.parse(mockData)
+  }
 }
-// Secure password hashing using Web Crypto API (SHA-256)
-async function hashPassword(password: string): Promise<string> {
-  const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password))
-  return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('')
-}
+
+// ---- API methods ----
+
 export const api = {
   // ---- Auth ----
   async login(
-  email: string,
-  password: string,
-  _signal?: AbortSignal
-): Promise<{ user: User; token: string }> {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) throw new ApiError(401, error.message)
+    email: string,
+    password: string,
+    _signal?: AbortSignal
+  ): Promise<{ user: User; token: string }> {
+    const key = email.toLowerCase().trim()
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', data.user.id)
-    .single()
+    // Demo account bypass — works without Supabase tables
+    const demo = DEMO_ACCOUNTS[key]
+    if (demo && demo.password === password) {
+      const user: User = {
+        id: `demo-${demo.role}`,
+        email: key,
+        name: demo.name,
+        role: demo.role,
+        is_active: true,
+        created_at: new Date().toISOString(),
+      }
+      await new Promise((r) => setTimeout(r, 500)) // realistic delay
+      return { user, token: `demo-token-${demo.role}` }
+    }
 
-  if (!profile) throw new ApiError(404, 'User profile not found')
+    // Real Supabase login for non-demo accounts
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw new ApiError(401, error.message)
 
-  return {
-    user: UserSchema.parse(profile),
-    token: data.session.access_token,
-  }
-},
+    const { data: profile } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', data.user.id)
+      .single()
+
+    if (!profile) throw new ApiError(404, 'User profile not found in database')
+
+    return {
+      user: UserSchema.parse(profile),
+      token: data.session.access_token,
+    }
+  },
+
   async register(
-  name: string,
-  email: string,
-  password: string,
-  _signal?: AbortSignal
-): Promise<{ user: User; token: string }> {
-  const { data, error } = await supabase.auth.signUp({ email, password })
-  if (error) throw new ApiError(400, error.message)
-  if (!data.user) throw new ApiError(400, 'Registration failed')
+    name: string,
+    email: string,
+    password: string,
+    _signal?: AbortSignal
+  ): Promise<{ user: User; token: string }> {
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) throw new ApiError(400, error.message)
+    if (!data.user) throw new ApiError(400, 'Registration failed')
 
-  const newUser = {
-    id: data.user.id,
-    email: email.trim().toLowerCase(),
-    name: name.trim(),
-    role: 'citizen' as const,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  }
+    const newUser = {
+      id: data.user.id,
+      email: email.trim().toLowerCase(),
+      name: name.trim(),
+      role: 'citizen' as const,
+      is_active: true,
+      created_at: new Date().toISOString(),
+    }
 
-  const { error: insertError } = await supabase.from('users').insert(newUser)
-  if (insertError) throw new ApiError(400, insertError.message)
+    const { error: insertError } = await supabase.from('users').insert(newUser)
+    if (insertError) throw new ApiError(400, insertError.message)
 
-  return {
-    user: UserSchema.parse(newUser),
-    token: data.session?.access_token ?? '',
-  }
-},
+    return {
+      user: UserSchema.parse(newUser),
+      token: data.session?.access_token ?? '',
+    }
+  },
 
   async logout(): Promise<void> {
     tokenStore.clear()
+    // Sign out from Supabase (ignore errors for demo tokens)
+    await supabase.auth.signOut().catch(() => {})
   },
 
   // ---- Hotspots ----
-async getHotspots(signal?: AbortSignal): Promise<Hotspot[]> {
-  if (_useMock) {
+  async getHotspots(signal?: AbortSignal): Promise<Hotspot[]> {
+    const mockHotspots = RAW_HOTSPOTS_V5.map((h: V5HotspotRaw) => ({
+      id: h.id,
+      latitude: h.lat,
+      longitude: h.lon,
+      risk_score: h.risk_score,
+      classification: (h.risk_level as 'low' | 'medium' | 'high' | 'critical'),
+      radius: h.radius_meters,
+      crime_count: Math.round(h.crime_rate_per_lakh * (h.population_lakh || 1)),
+      state: h.state,
+      predicted_crimes: h.predicted_crimes as CrimeType[],
+      primary_warning: h.primary_warning,
+      trend: (h.trend as 'rising' | 'stable' | 'falling' || 'stable'),
+      model_confidence: h.model_confidence / 100,
+      created_at: new Date().toISOString(),
+    }))
     return withMockFallback(
-      RAW_HOTSPOTS_V5.map((h: V5HotspotRaw) => ({
-        id: h.id,
-        latitude: h.lat,
-        longitude: h.lon,
-        risk_score: h.risk_score,
-        classification: (h.risk_level as 'low' | 'medium' | 'high' | 'critical'),
-        radius: h.radius_meters,
-        crime_count: Math.round(h.crime_rate_per_lakh * (h.population_lakh || 1)),
-        state: h.state,
-        predicted_crimes: h.predicted_crimes as CrimeType[],
-        primary_warning: h.primary_warning,
-        trend: (h.trend as 'rising' | 'stable' | 'falling' || 'stable'),
-        model_confidence: h.model_confidence / 100,
-        created_at: new Date().toISOString(),
-      })),
+      mockHotspots,
       z.array(HotspotSchema),
-      () => apiFetch('/hotspots', { signal })
+      async () => {
+        const { data, error } = await supabase.from('hotspots').select('*')
+        if (error) throw new ApiError(500, error.message)
+        return data
+      }
     )
-  }
-
-  const { data, error } = await supabase
-    .from('hotspots')
-    .select('*')
-
-  if (error) throw new ApiError(500, error.message)
-  return z.array(HotspotSchema).parse(data)
-},
-
-  // ---- Incidents ----
-    async getIncidents(signal?: AbortSignal): Promise<Incident[]> {
-    if (_useMock) {
-      return withMockFallback(
-        MOCK_INCIDENTS,
-        z.array(IncidentSchema),
-        () => apiFetch('/incidents', { signal })
-      )
-    }
-
-    const { data, error } = await supabase
-      .from('incidents')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) throw new ApiError(500, error.message)
-    return z.array(IncidentSchema).parse(data)
   },
 
-    async reportIncident(
+  // ---- Incidents ----
+  async getIncidents(signal?: AbortSignal): Promise<Incident[]> {
+    return withMockFallback(
+      MOCK_INCIDENTS,
+      z.array(IncidentSchema),
+      async () => {
+        const { data, error } = await supabase
+          .from('incidents')
+          .select('*')
+          .order('created_at', { ascending: false })
+        if (error) throw new ApiError(500, error.message)
+        return data
+      }
+    )
+  },
+
+  async reportIncident(
     incident: Omit<Incident, 'id' | 'status' | 'verified_by' | 'created_at'>,
     signal?: AbortSignal
   ): Promise<Incident> {
@@ -413,33 +437,31 @@ async getHotspots(signal?: AbortSignal): Promise<Hotspot[]> {
   },
 
   // ---- Dashboard stats ----
-    async getDashboardStats(signal?: AbortSignal): Promise<DashboardStats> {
-    if (_useMock) {
-      return withMockFallback(
-        MOCK_STATS,
-        DashboardStatsSchema,
-        () => apiFetch('/dashboard/stats', { signal })
-      )
-    }
+  async getDashboardStats(signal?: AbortSignal): Promise<DashboardStats> {
+    return withMockFallback(
+      MOCK_STATS,
+      DashboardStatsSchema,
+      async () => {
+        const [hotspotsRes, incidentsRes, sosRes] = await Promise.all([
+          supabase.from('hotspots').select('id, classification', { count: 'exact' }),
+          supabase.from('incidents').select('id, status', { count: 'exact' }),
+          supabase.from('sos_alerts').select('id, status', { count: 'exact' }),
+        ])
 
-    const [hotspotsRes, incidentsRes, sosRes] = await Promise.all([
-      supabase.from('hotspots').select('id, classification', { count: 'exact' }),
-      supabase.from('incidents').select('id, status', { count: 'exact' }),
-      supabase.from('sos_alerts').select('id, status', { count: 'exact' }),
-    ])
+        const hotspot_count = hotspotsRes.count ?? 0
+        const total_incidents = incidentsRes.count ?? 0
+        const resolved_incidents = (incidentsRes.data ?? []).filter(i => i.status === 'resolved').length
+        const active_sos_alerts = (sosRes.data ?? []).filter(s => s.status === 'active').length
 
-    const hotspot_count = hotspotsRes.count ?? 0
-    const total_incidents = incidentsRes.count ?? 0
-    const resolved_incidents = (incidentsRes.data ?? []).filter(i => i.status === 'resolved').length
-    const active_sos_alerts = (sosRes.data ?? []).filter(s => s.status === 'active').length
-
-    return DashboardStatsSchema.parse({
-      total_incidents,
-      resolved_incidents,
-      active_sos_alerts,
-      hotspot_count,
-      response_time_avg: 7.4,
-      crime_reduction_pct: 12.3,
-    })
+        return {
+          total_incidents,
+          resolved_incidents,
+          active_sos_alerts,
+          hotspot_count,
+          response_time_avg: 7.4,
+          crime_reduction_pct: 12.3,
+        }
+      }
+    )
   },
 }

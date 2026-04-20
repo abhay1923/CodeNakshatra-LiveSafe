@@ -6,7 +6,6 @@ import {
   useEffect,
   type ReactNode,
 } from 'react'
-import { supabase } from '@/lib/supabase'
 import { tokenStore } from '@/lib/tokenStore'
 import { api } from '@/app/services/api'
 import type { User, AuthState } from '@/types'
@@ -27,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: false,
   })
 
+  // Restore session from stored token on mount
   useEffect(() => {
     const restoredUser = tokenStore.getUser<User>()
     const restoredToken = tokenStore.getToken()
@@ -71,7 +71,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await api.logout()
-    tokenStore.clear()
     setState({ user: null, token: null, isLoading: false, isAuthenticated: false })
   }, [])
 
