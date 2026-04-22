@@ -1,7 +1,9 @@
 import { Router, type IRouter } from "express";
-import { db, sosAlertsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { db, sosAlertsTable, emergencyContactsTable } from "@workspace/db";
+import { eq, desc, and } from "drizzle-orm";
 import { z } from "zod";
+import { requireAuth, requireRole, type AuthedRequest } from "../lib/auth";
+import { sendWhatsAppMessage } from "../lib/whatsapp";
 
 const router: IRouter = Router();
 
@@ -20,6 +22,34 @@ const locationSchema = z.object({
 const ackSchema = z.object({
   officer: z.string().optional(),
 });
+
+const contactSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  phone: z
+    .string()
+    .trim()
+    .min(8)
+    .max(20)
+    .regex(/^\+?[0-9()\-\s]+$/, "Invalid phone number"),
+});
+
+function serializeContact(row: typeof emergencyContactsTable.$inferSelect) {
+  return {
+    id: String(row.id),
+    user_id: String(row.userId),
+    name: row.name,
+    phone: row.phone,
+    created_at: row.createdAt.toISOString(),
+  };
+}
+
+function normalizePhone(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("+")) {
+    return `+${trimmed.slice(1).replace(/\D/g, "")}`;
+  }
+  return `+${trimmed.replace(/\D/g, "")}`;
+}
 
 function serialize(row: typeof sosAlertsTable.$inferSelect) {
   return {
@@ -63,7 +93,43 @@ router.post("/sos", async (req, res) => {
       locationUpdatedAt: new Date(),
     })
     .returning();
-  res.status(201).json(serialize(row));
+
+  // Notify citizen emergency contacts on WhatsApp (best-effort, non-blocking for SOS creation)
+  let whatsappNotificationsSent = 0;
+  const numericUserId = Number(user_id);
+  if (!Number.isNaN(numericUserId)) {
+    const contacts = await db
+      .select()
+      .from(emergencyContactsTable)
+      .where(eq(emergencyContactsTable.userId, numericUserId));
+
+    if (contacts.length > 0) {
+      const mapsLink = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+      const message = [
+        "LIVE SAFE SOS ALERT",
+        `${user_name ?? "A citizen"} triggered an emergency SOS.`,
+        `Live location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+        `Map: ${mapsLink}`,
+        "Please contact them immediately.",
+      ].join("\n");
+
+      await Promise.all(
+        contacts.map(async (contact) => {
+          try {
+            await sendWhatsAppMessage(contact.phone, message);
+            whatsappNotificationsSent += 1;
+          } catch {
+            // Keep SOS flow resilient even if WhatsApp provider has transient issues.
+          }
+        }),
+      );
+    }
+  }
+
+  res.status(201).json({
+    ...serialize(row),
+    whatsapp_notifications_sent: whatsappNotificationsSent,
+  });
 });
 
 router.post("/sos/:id/location", async (req, res) => {
@@ -121,5 +187,64 @@ router.patch("/sos/:id/resolve", async (req, res) => {
     .returning();
   res.json(serialize(row));
 });
+
+router.get("/sos/contacts", requireAuth, requireRole("citizen"), async (req: AuthedRequest, res) => {
+  const user = req.user!;
+  const rows = await db
+    .select()
+    .from(emergencyContactsTable)
+    .where(eq(emergencyContactsTable.userId, user.id))
+    .orderBy(desc(emergencyContactsTable.createdAt));
+  res.json(rows.map(serializeContact));
+});
+
+router.post("/sos/contacts", requireAuth, requireRole("citizen"), async (req: AuthedRequest, res) => {
+  const parsed = contactSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: "Invalid payload", errors: parsed.error.issues });
+  }
+  const user = req.user!;
+  const normalizedPhone = normalizePhone(parsed.data.phone);
+
+  const [existing] = await db
+    .select()
+    .from(emergencyContactsTable)
+    .where(
+      and(
+        eq(emergencyContactsTable.userId, user.id),
+        eq(emergencyContactsTable.phone, normalizedPhone),
+      ),
+    );
+  if (existing) {
+    return res.status(409).json({ message: "This contact number is already added." });
+  }
+
+  const [row] = await db
+    .insert(emergencyContactsTable)
+    .values({
+      userId: user.id,
+      name: parsed.data.name,
+      phone: normalizedPhone,
+    })
+    .returning();
+  res.status(201).json(serializeContact(row));
+});
+
+router.delete(
+  "/sos/contacts/:id",
+  requireAuth,
+  requireRole("citizen"),
+  async (req: AuthedRequest, res) => {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ message: "Invalid id" });
+    const user = req.user!;
+    const [row] = await db
+      .delete(emergencyContactsTable)
+      .where(and(eq(emergencyContactsTable.id, id), eq(emergencyContactsTable.userId, user.id)))
+      .returning();
+    if (!row) return res.status(404).json({ message: "Not found" });
+    res.json({ message: "Deleted" });
+  },
+);
 
 export default router;

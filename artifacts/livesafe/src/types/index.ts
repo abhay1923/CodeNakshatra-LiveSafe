@@ -148,8 +148,17 @@ export interface SOSAlert {
   status: SOSStatus
   assigned_officer?: string
   response_time?: number      // seconds
+  whatsapp_notifications_sent?: number
   acknowledged_at?: string
   resolved_at?: string
+  created_at: string
+}
+
+export interface EmergencyContact {
+  id: string
+  user_id: string
+  name: string
+  phone: string
   created_at: string
 }
 

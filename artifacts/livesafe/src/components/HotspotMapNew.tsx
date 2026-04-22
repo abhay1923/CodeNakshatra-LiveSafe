@@ -370,6 +370,11 @@ export default function HotspotMapNew() {
                       <p className="text-slate-300 text-xs mt-0.5 leading-relaxed">
                         Police have been notified. Help is on the way. Stay calm.
                       </p>
+                      {typeof sosResult.whatsapp_notifications_sent === 'number' && (
+                        <p className="text-emerald-300 text-xs mt-1">
+                          WhatsApp alerts sent to {sosResult.whatsapp_notifications_sent} emergency contact(s).
+                        </p>
+                      )}
                       {userLocation && (
                         <div className="flex items-center gap-1 mt-2 text-slate-500 text-xs">
                           <MapPin className="w-3 h-3" />

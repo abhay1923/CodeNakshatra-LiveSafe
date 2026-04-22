@@ -14,6 +14,7 @@ import type {
   Hotspot,
   CrimeType,
   SOSAlert,
+  EmergencyContact,
   MLMetrics,
   PredictionRequest,
   PredictionResult,
@@ -105,10 +106,19 @@ const SOSAlertSchema: z.ZodType<SOSAlert> = z.object({
   status: z.enum(['active', 'acknowledged', 'resolved']),
   assigned_officer: z.string().optional(),
   response_time: z.number().optional(),
+  whatsapp_notifications_sent: z.number().optional(),
   acknowledged_at: z.string().optional(),
   resolved_at: z.string().optional(),
   created_at: z.string(),
 }) as z.ZodType<SOSAlert>
+
+const EmergencyContactSchema: z.ZodType<EmergencyContact> = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  name: z.string(),
+  phone: z.string(),
+  created_at: z.string(),
+})
 
 const MLMetricsSchema: z.ZodType<MLMetrics> = z.object({
   accuracy: z.number(),
@@ -419,6 +429,30 @@ export const api = {
       signal,
     })
     return SOSAlertSchema.parse(data)
+  },
+
+  async getEmergencyContacts(signal?: AbortSignal): Promise<EmergencyContact[]> {
+    const data = await apiFetch<unknown>('/sos/contacts', { signal })
+    return z.array(EmergencyContactSchema).parse(data)
+  },
+
+  async addEmergencyContact(
+    payload: { name: string; phone: string },
+    signal?: AbortSignal
+  ): Promise<EmergencyContact> {
+    const data = await apiFetch<unknown>('/sos/contacts', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      signal,
+    })
+    return EmergencyContactSchema.parse(data)
+  },
+
+  async deleteEmergencyContact(id: string, signal?: AbortSignal): Promise<void> {
+    await apiFetch(`/sos/contacts/${id}`, {
+      method: 'DELETE',
+      signal,
+    })
   },
 
   // ---- ML (real backend) ----
