@@ -74,7 +74,7 @@ const IncidentSchema: z.ZodType<Incident> = z.object({
   severity: z.enum(['low', 'medium', 'high', 'critical']),
   status: z.enum(['reported', 'verified', 'resolved', 'dismissed']),
   reported_by: z.string(),
-  verified_by: z.string().nullable().optional(),
+  verified_by: z.string().optional(),
   created_at: z.string(),
 })
 
@@ -103,10 +103,40 @@ const SOSAlertSchema: z.ZodType<SOSAlert> = z.object({
   current_latitude: z.number().optional(),
   current_longitude: z.number().optional(),
   location_updated_at: z.string().optional(),
+  trail: z.array(z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+    recorded_at: z.string(),
+  })).optional(),
+  events: z.array(z.object({
+    id: z.string(),
+    type: z.string(),
+    detail: z.string(),
+    created_at: z.string(),
+  })).optional(),
+  responder_status: z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    role: z.enum(['police', 'family', 'volunteer', 'hospital']),
+    status: z.enum(['queued', 'notified', 'accepted', 'en_route', 'standby']),
+    eta_minutes: z.number().optional(),
+  })).optional(),
+  evidence_items: z.array(z.object({
+    id: z.string(),
+    type: z.enum(['audio', 'video']),
+    label: z.string(),
+    captured_at: z.string(),
+    review_status: z.enum(['new', 'flagged', 'reviewed']),
+  })).optional(),
   status: z.enum(['active', 'acknowledged', 'resolved']),
   assigned_officer: z.string().optional(),
   response_time: z.number().optional(),
   whatsapp_notifications_sent: z.number().optional(),
+  escalated: z.boolean().optional(),
+  safety_mode: z.enum(['everyday', 'night', 'women', 'student']).optional(),
+  last_checkin_at: z.string().optional(),
+  notified_targets: z.array(z.string()).optional(),
+  evidence_count: z.number().optional(),
   acknowledged_at: z.string().optional(),
   resolved_at: z.string().optional(),
   created_at: z.string(),
@@ -365,9 +395,141 @@ const MOCK_INCIDENTS: Incident[] = [
 ]
 
 const MOCK_SOS_ALERTS: SOSAlert[] = [
-  { id: 's1', user_id: 'u1', user_name: 'Priya Sharma', latitude: 28.6200, longitude: 77.2050, status: 'active', created_at: new Date(Date.now() - 300000).toISOString() },
-  { id: 's2', user_id: 'u2', user_name: 'Rahul Gupta', latitude: 28.7010, longitude: 77.1000, status: 'acknowledged', assigned_officer: 'Officer Singh', created_at: new Date(Date.now() - 900000).toISOString() },
-  { id: 's3', user_id: 'u3', user_name: 'Anjali Verma', latitude: 28.5400, longitude: 77.3800, status: 'resolved', assigned_officer: 'Officer Kumar', response_time: 420, created_at: new Date(Date.now() - 3600000).toISOString() },
+  {
+    id: 's1',
+    user_id: 'u1',
+    user_name: 'Priya Sharma',
+    latitude: 28.6200,
+    longitude: 77.2050,
+    current_latitude: 28.6216,
+    current_longitude: 77.2065,
+    location_updated_at: new Date(Date.now() - 15000).toISOString(),
+    trail: [
+      { latitude: 28.6200, longitude: 77.2050, recorded_at: new Date(Date.now() - 180000).toISOString() },
+      { latitude: 28.6207, longitude: 77.2058, recorded_at: new Date(Date.now() - 90000).toISOString() },
+      { latitude: 28.6216, longitude: 77.2065, recorded_at: new Date(Date.now() - 15000).toISOString() },
+    ],
+    status: 'active',
+    escalated: true,
+    safety_mode: 'women',
+    last_checkin_at: new Date(Date.now() - 120000).toISOString(),
+    notified_targets: ['Police dispatch', 'Family contacts', 'Verified volunteers', 'Hospital standby'],
+    evidence_count: 2,
+    responder_status: [
+      { id: 'rsp-s1-police', label: 'Police dispatch', role: 'police', status: 'en_route', eta_minutes: 4 },
+      { id: 'rsp-s1-family', label: 'Family contacts', role: 'family', status: 'accepted' },
+      { id: 'rsp-s1-volunteer', label: 'Verified volunteers', role: 'volunteer', status: 'accepted', eta_minutes: 6 },
+      { id: 'rsp-s1-hospital', label: 'Hospital standby', role: 'hospital', status: 'standby', eta_minutes: 9 },
+    ],
+    evidence_items: [
+      { id: 'ev-s1-a1', type: 'audio', label: 'Audio evidence clip', captured_at: new Date(Date.now() - 65000).toISOString(), review_status: 'flagged' },
+      { id: 'ev-s1-v1', type: 'video', label: 'Video evidence clip', captured_at: new Date(Date.now() - 55000).toISOString(), review_status: 'new' },
+    ],
+    events: [
+      {
+        id: 'evt-s1-1',
+        type: 'created',
+        detail: 'Citizen activated SOS and started live location sharing.',
+        created_at: new Date(Date.now() - 300000).toISOString(),
+      },
+      {
+        id: 'evt-s1-2',
+        type: 'escalated',
+        detail: 'Dead-man switch check-in was missed; dispatch priority increased.',
+        created_at: new Date(Date.now() - 120000).toISOString(),
+      },
+      {
+        id: 'evt-s1-3',
+        type: 'evidence',
+        detail: 'Two evidence clips captured and attached to the alert.',
+        created_at: new Date(Date.now() - 60000).toISOString(),
+      },
+    ],
+    created_at: new Date(Date.now() - 300000).toISOString(),
+  },
+  {
+    id: 's2',
+    user_id: 'u2',
+    user_name: 'Rahul Gupta',
+    latitude: 28.7010,
+    longitude: 77.1000,
+    current_latitude: 28.7015,
+    current_longitude: 77.1011,
+    location_updated_at: new Date(Date.now() - 45000).toISOString(),
+    trail: [
+      { latitude: 28.7010, longitude: 77.1000, recorded_at: new Date(Date.now() - 600000).toISOString() },
+      { latitude: 28.7015, longitude: 77.1011, recorded_at: new Date(Date.now() - 45000).toISOString() },
+    ],
+    status: 'acknowledged',
+    assigned_officer: 'Officer Singh',
+    safety_mode: 'night',
+    notified_targets: ['Police dispatch', 'Family contacts', 'Hospital standby'],
+    evidence_count: 1,
+    responder_status: [
+      { id: 'rsp-s2-police', label: 'Police dispatch', role: 'police', status: 'accepted', eta_minutes: 5 },
+      { id: 'rsp-s2-family', label: 'Family contacts', role: 'family', status: 'accepted' },
+      { id: 'rsp-s2-hospital', label: 'Hospital standby', role: 'hospital', status: 'standby', eta_minutes: 11 },
+    ],
+    evidence_items: [
+      { id: 'ev-s2-a1', type: 'audio', label: 'Audio evidence clip', captured_at: new Date(Date.now() - 300000).toISOString(), review_status: 'reviewed' },
+    ],
+    events: [
+      {
+        id: 'evt-s2-1',
+        type: 'created',
+        detail: 'Citizen activated SOS and shared current position.',
+        created_at: new Date(Date.now() - 900000).toISOString(),
+      },
+      {
+        id: 'evt-s2-2',
+        type: 'acknowledged',
+        detail: 'Officer Singh accepted the alert and is en route.',
+        created_at: new Date(Date.now() - 420000).toISOString(),
+      },
+    ],
+    created_at: new Date(Date.now() - 900000).toISOString(),
+  },
+  {
+    id: 's3',
+    user_id: 'u3',
+    user_name: 'Anjali Verma',
+    latitude: 28.5400,
+    longitude: 77.3800,
+    status: 'resolved',
+    assigned_officer: 'Officer Kumar',
+    response_time: 420,
+    safety_mode: 'student',
+    notified_targets: ['Police dispatch', 'Family contacts'],
+    evidence_count: 1,
+    responder_status: [
+      { id: 'rsp-s3-police', label: 'Police dispatch', role: 'police', status: 'accepted' },
+      { id: 'rsp-s3-family', label: 'Family contacts', role: 'family', status: 'accepted' },
+    ],
+    evidence_items: [
+      { id: 'ev-s3-v1', type: 'video', label: 'Video evidence clip', captured_at: new Date(Date.now() - 3200000).toISOString(), review_status: 'reviewed' },
+    ],
+    events: [
+      {
+        id: 'evt-s3-1',
+        type: 'created',
+        detail: 'Citizen activated SOS from a student commute route.',
+        created_at: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: 'evt-s3-2',
+        type: 'acknowledged',
+        detail: 'Officer Kumar acknowledged the alert and coordinated response.',
+        created_at: new Date(Date.now() - 3300000).toISOString(),
+      },
+      {
+        id: 'evt-s3-3',
+        type: 'resolved',
+        detail: 'Incident was resolved and the citizen marked safe.',
+        created_at: new Date(Date.now() - 3000000).toISOString(),
+      },
+    ],
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+  },
 ]
 
 const MOCK_ML_METRICS: MLMetrics = {
@@ -401,6 +563,60 @@ const _useMock =
     : mockModeEnv === 'false'
       ? false
       : !isSupabaseConfigured
+
+const SOS_STORAGE_KEY = 'livesafe-sos-alerts'
+const CONTACTS_STORAGE_KEY = 'livesafe-emergency-contacts'
+
+function canUseStorage() {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
+function readStoredSOSAlerts(): SOSAlert[] {
+  if (!canUseStorage()) return z.array(SOSAlertSchema).parse(MOCK_SOS_ALERTS)
+  try {
+    const raw = window.localStorage.getItem(SOS_STORAGE_KEY)
+    if (!raw) return z.array(SOSAlertSchema).parse(MOCK_SOS_ALERTS)
+    return z.array(SOSAlertSchema).parse(JSON.parse(raw))
+  } catch {
+    return z.array(SOSAlertSchema).parse(MOCK_SOS_ALERTS)
+  }
+}
+
+function writeStoredSOSAlerts(alerts: SOSAlert[]) {
+  if (!canUseStorage()) return
+  window.localStorage.setItem(SOS_STORAGE_KEY, JSON.stringify(alerts))
+}
+
+function addAlertEvent(alert: SOSAlert, type: string, detail: string): SOSAlert {
+  return SOSAlertSchema.parse({
+    ...alert,
+    events: [
+      ...(alert.events ?? []),
+      {
+        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        type,
+        detail,
+        created_at: new Date().toISOString(),
+      },
+    ].slice(-12),
+  })
+}
+
+function readStoredContacts(): EmergencyContact[] {
+  if (!canUseStorage()) return []
+  try {
+    const raw = window.localStorage.getItem(CONTACTS_STORAGE_KEY)
+    if (!raw) return []
+    return z.array(EmergencyContactSchema).parse(JSON.parse(raw))
+  } catch {
+    return []
+  }
+}
+
+function writeStoredContacts(contacts: EmergencyContact[]) {
+  if (!canUseStorage()) return
+  window.localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(contacts))
+}
 
 // ---- API methods ----
 
@@ -538,11 +754,13 @@ export const api = {
   ): Promise<Incident[]> {
     const buildFallback = () => {
       let filtered = [...MOCK_INCIDENTS]
+      const fromDate = filters?.from ? new Date(filters.from) : null
+      const toDate = filters?.to ? new Date(filters.to) : null
       if (filters?.type) filtered = filtered.filter((i) => i.type === filters.type)
       if (filters?.severity) filtered = filtered.filter((i) => i.severity === filters.severity)
       if (filters?.status) filtered = filtered.filter((i) => i.status === filters.status)
-      if (filters?.from) filtered = filtered.filter((i) => new Date(i.created_at) >= new Date(filters.from))
-      if (filters?.to) filtered = filtered.filter((i) => new Date(i.created_at) <= new Date(filters.to))
+      if (fromDate) filtered = filtered.filter((i) => new Date(i.created_at) >= fromDate)
+      if (toDate) filtered = filtered.filter((i) => new Date(i.created_at) <= toDate)
       if (filters?.limit) filtered = filtered.slice(0, filters.limit)
       return z.array(IncidentSchema).parse(filtered)
     }
@@ -620,7 +838,7 @@ export const api = {
       const data = await apiFetch<unknown>('/sos', { signal })
       return z.array(SOSAlertSchema).parse(data)
     } catch (err) {
-      if (isBackendUnavailableError(err)) return z.array(SOSAlertSchema).parse(MOCK_SOS_ALERTS)
+      if (isBackendUnavailableError(err)) return readStoredSOSAlerts()
       throw err
     }
   },
@@ -629,12 +847,43 @@ export const api = {
     payload: { latitude: number; longitude: number; user_id: string; user_name?: string },
     signal?: AbortSignal
   ): Promise<SOSAlert> {
-    const data = await apiFetch<unknown>('/sos', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      signal,
-    })
-    return SOSAlertSchema.parse(data)
+    try {
+      const data = await apiFetch<unknown>('/sos', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        signal,
+      })
+      return SOSAlertSchema.parse(data)
+    } catch (err) {
+      if (isBackendUnavailableError(err)) {
+        const now = new Date().toISOString()
+        const stored = readStoredSOSAlerts()
+        const alert = SOSAlertSchema.parse({
+          id: `s${Date.now()}`,
+          user_id: payload.user_id,
+          user_name: payload.user_name,
+          latitude: payload.latitude,
+          longitude: payload.longitude,
+          current_latitude: payload.latitude,
+          current_longitude: payload.longitude,
+          location_updated_at: now,
+          trail: [{ latitude: payload.latitude, longitude: payload.longitude, recorded_at: now }],
+          status: 'active',
+          events: [
+            {
+              id: `evt-${Date.now()}-created`,
+              type: 'created',
+              detail: 'Citizen activated SOS and shared live location.',
+              created_at: now,
+            },
+          ],
+          created_at: now,
+        })
+        writeStoredSOSAlerts([alert, ...stored])
+        return alert
+      }
+      throw err
+    }
   },
 
   async updateSOSLocation(
@@ -642,12 +891,158 @@ export const api = {
     payload: { latitude: number; longitude: number },
     signal?: AbortSignal
   ): Promise<SOSAlert> {
-    const data = await apiFetch<unknown>(`/sos/${id}/location`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      signal,
-    })
-    return SOSAlertSchema.parse(data)
+    try {
+      const data = await apiFetch<unknown>(`/sos/${id}/location`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        signal,
+      })
+      return SOSAlertSchema.parse(data)
+    } catch (err) {
+      if (isBackendUnavailableError(err)) {
+        const now = new Date().toISOString()
+        const updatedAlerts = readStoredSOSAlerts().map((alert) => {
+          if (alert.id !== id) return alert
+          return addAlertEvent(SOSAlertSchema.parse({
+            ...alert,
+            current_latitude: payload.latitude,
+            current_longitude: payload.longitude,
+            location_updated_at: now,
+            trail: [
+              ...(alert.trail ?? []),
+              { latitude: payload.latitude, longitude: payload.longitude, recorded_at: now },
+            ].slice(-20),
+          }), 'location_update', `Location refreshed to ${payload.latitude.toFixed(4)}, ${payload.longitude.toFixed(4)}.`)
+        })
+        writeStoredSOSAlerts(updatedAlerts)
+        return updatedAlerts.find((alert) => alert.id === id) ?? updatedAlerts[0]
+      }
+      throw err
+    }
+  },
+
+  async syncSOSAlert(
+    id: string,
+    payload: {
+      escalated?: boolean
+      safety_mode?: SOSAlert['safety_mode']
+      last_checkin_at?: string
+      notified_targets?: string[]
+      evidence_count?: number
+      whatsapp_notifications_sent?: number
+      responder_status?: SOSAlert['responder_status']
+      evidence_items?: SOSAlert['evidence_items']
+      event?: { type: string; detail: string }
+    },
+    signal?: AbortSignal
+  ): Promise<SOSAlert> {
+    try {
+      const data = await apiFetch<unknown>(`/sos/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+        signal,
+      })
+      return SOSAlertSchema.parse(data)
+    } catch (err) {
+      if (isBackendUnavailableError(err)) {
+        const updatedAlerts = readStoredSOSAlerts().map((alert) => {
+          if (alert.id !== id) return alert
+          const nextAlert = SOSAlertSchema.parse({
+            ...alert,
+            escalated: payload.escalated ?? alert.escalated,
+            safety_mode: payload.safety_mode ?? alert.safety_mode,
+            last_checkin_at: payload.last_checkin_at ?? alert.last_checkin_at,
+            notified_targets: payload.notified_targets ?? alert.notified_targets,
+            evidence_count: payload.evidence_count ?? alert.evidence_count,
+            whatsapp_notifications_sent:
+              payload.whatsapp_notifications_sent ?? alert.whatsapp_notifications_sent,
+            responder_status: payload.responder_status ?? alert.responder_status,
+            evidence_items: payload.evidence_items ?? alert.evidence_items,
+          })
+          return payload.event
+            ? addAlertEvent(nextAlert, payload.event.type, payload.event.detail)
+            : nextAlert
+        })
+        writeStoredSOSAlerts(updatedAlerts)
+        return updatedAlerts.find((alert) => alert.id === id) ?? readStoredSOSAlerts()[0]
+      }
+      throw err
+    }
+  },
+
+  async updateSOSResponderStatus(
+    id: string,
+    responderId: string,
+    status: NonNullable<SOSAlert['responder_status']>[number]['status'],
+    signal?: AbortSignal
+  ): Promise<SOSAlert> {
+    const statusLabel = status.replace('_', ' ')
+    try {
+      const data = await apiFetch<unknown>(`/sos/${id}/responders/${responderId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+        signal,
+      })
+      return SOSAlertSchema.parse(data)
+    } catch (err) {
+      if (isBackendUnavailableError(err)) {
+        const updatedAlerts = readStoredSOSAlerts().map((alert) => {
+          if (alert.id !== id) return alert
+          const responder = alert.responder_status?.find((item) => item.id === responderId)
+          const nextAlert = SOSAlertSchema.parse({
+            ...alert,
+            responder_status: (alert.responder_status ?? []).map((item) =>
+              item.id === responderId ? { ...item, status } : item
+            ),
+          })
+          return addAlertEvent(
+            nextAlert,
+            'responder_update',
+            `${responder?.label ?? 'Responder'} marked as ${statusLabel}.`
+          )
+        })
+        writeStoredSOSAlerts(updatedAlerts)
+        return updatedAlerts.find((alert) => alert.id === id) ?? readStoredSOSAlerts()[0]
+      }
+      throw err
+    }
+  },
+
+  async updateSOSEvidenceReview(
+    id: string,
+    evidenceId: string,
+    reviewStatus: NonNullable<SOSAlert['evidence_items']>[number]['review_status'],
+    signal?: AbortSignal
+  ): Promise<SOSAlert> {
+    try {
+      const data = await apiFetch<unknown>(`/sos/${id}/evidence/${evidenceId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ review_status: reviewStatus }),
+        signal,
+      })
+      return SOSAlertSchema.parse(data)
+    } catch (err) {
+      if (isBackendUnavailableError(err)) {
+        const updatedAlerts = readStoredSOSAlerts().map((alert) => {
+          if (alert.id !== id) return alert
+          const evidence = alert.evidence_items?.find((item) => item.id === evidenceId)
+          const nextAlert = SOSAlertSchema.parse({
+            ...alert,
+            evidence_items: (alert.evidence_items ?? []).map((item) =>
+              item.id === evidenceId ? { ...item, review_status: reviewStatus } : item
+            ),
+          })
+          return addAlertEvent(
+            nextAlert,
+            'evidence_review',
+            `${evidence?.label ?? 'Evidence item'} marked as ${reviewStatus}.`
+          )
+        })
+        writeStoredSOSAlerts(updatedAlerts)
+        return updatedAlerts.find((alert) => alert.id === id) ?? readStoredSOSAlerts()[0]
+      }
+      throw err
+    }
   },
 
   async acknowledgeSOSAlert(id: string, officer?: string, signal?: AbortSignal): Promise<SOSAlert> {
@@ -661,14 +1056,19 @@ export const api = {
     } catch (err) {
       if (isBackendUnavailableError(err)) {
         const now = new Date().toISOString()
-        const fallback = MOCK_SOS_ALERTS.find((alert) => alert.id === id) ?? MOCK_SOS_ALERTS[0]
-        return SOSAlertSchema.parse({
-          ...fallback,
-          id,
-          status: 'acknowledged',
-          assigned_officer: officer,
-          acknowledged_at: now,
-        })
+        const updatedAlerts = readStoredSOSAlerts().map((alert) =>
+          alert.id === id
+            ? addAlertEvent(SOSAlertSchema.parse({
+                ...alert,
+                id,
+                status: 'acknowledged',
+                assigned_officer: officer,
+                acknowledged_at: now,
+              }), 'acknowledged', `${officer ?? 'Duty officer'} acknowledged the alert and is attending.`)
+            : alert
+        )
+        writeStoredSOSAlerts(updatedAlerts)
+        return updatedAlerts.find((alert) => alert.id === id) ?? readStoredSOSAlerts()[0]
       }
       throw err
     }
@@ -684,14 +1084,19 @@ export const api = {
     } catch (err) {
       if (isBackendUnavailableError(err)) {
         const now = new Date().toISOString()
-        const fallback = MOCK_SOS_ALERTS.find((alert) => alert.id === id) ?? MOCK_SOS_ALERTS[0]
-        return SOSAlertSchema.parse({
-          ...fallback,
-          id,
-          status: 'resolved',
-          resolved_at: now,
-          response_time: 420,
-        })
+        const updatedAlerts = readStoredSOSAlerts().map((alert) =>
+          alert.id === id
+            ? addAlertEvent(SOSAlertSchema.parse({
+                ...alert,
+                id,
+                status: 'resolved',
+                resolved_at: now,
+                response_time: 420,
+              }), 'resolved', 'Alert closed after field response and citizen safety confirmation.')
+            : alert
+        )
+        writeStoredSOSAlerts(updatedAlerts)
+        return updatedAlerts.find((alert) => alert.id === id) ?? readStoredSOSAlerts()[0]
       }
       throw err
     }
@@ -702,7 +1107,7 @@ export const api = {
       const data = await apiFetch<unknown>('/sos/contacts', { signal })
       return z.array(EmergencyContactSchema).parse(data)
     } catch (err) {
-      if (isBackendUnavailableError(err)) return []
+      if (isBackendUnavailableError(err)) return readStoredContacts()
       throw err
     }
   },
@@ -711,19 +1116,44 @@ export const api = {
     payload: { name: string; phone: string },
     signal?: AbortSignal
   ): Promise<EmergencyContact> {
-    const data = await apiFetch<unknown>('/sos/contacts', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      signal,
-    })
-    return EmergencyContactSchema.parse(data)
+    try {
+      const data = await apiFetch<unknown>('/sos/contacts', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        signal,
+      })
+      return EmergencyContactSchema.parse(data)
+    } catch (err) {
+        if (isBackendUnavailableError(err)) {
+        const currentUser = tokenStore.getUser<{ id: string }>()
+          const contact = EmergencyContactSchema.parse({
+            id: `c${Date.now()}`,
+            user_id: currentUser?.id ?? 'demo-citizen',
+            name: payload.name.trim(),
+            phone: payload.phone.trim(),
+            created_at: new Date().toISOString(),
+        })
+        const stored = readStoredContacts()
+        writeStoredContacts([contact, ...stored])
+        return contact
+      }
+      throw err
+    }
   },
 
   async deleteEmergencyContact(id: string, signal?: AbortSignal): Promise<void> {
-    await apiFetch(`/sos/contacts/${id}`, {
-      method: 'DELETE',
-      signal,
-    })
+    try {
+      await apiFetch(`/sos/contacts/${id}`, {
+        method: 'DELETE',
+        signal,
+      })
+    } catch (err) {
+      if (isBackendUnavailableError(err)) {
+        writeStoredContacts(readStoredContacts().filter((contact) => contact.id !== id))
+        return
+      }
+      throw err
+    }
   },
 
   // ---- ML (real backend) ----
@@ -797,7 +1227,11 @@ export const api = {
   // ---- Dashboard stats ----
   async getDashboardStats(signal?: AbortSignal): Promise<DashboardStats> {
     if (_useMock) {
-      return DashboardStatsSchema.parse(MOCK_STATS)
+      const storedAlerts = readStoredSOSAlerts()
+      return DashboardStatsSchema.parse({
+        ...MOCK_STATS,
+        active_sos_alerts: storedAlerts.filter((alert) => alert.status === 'active').length,
+      })
     }
 
     const [hotspotsRes, incidentsRes, sosRes] = await Promise.all([

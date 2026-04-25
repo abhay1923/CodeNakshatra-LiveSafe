@@ -7,7 +7,7 @@
 // Features: 28  |  SMOTE samples: 928
 // DO NOT EDIT — regenerate via train_v5_real.py
 
-import type { Hotspot } from '../types';
+import type { V5City } from '../types';
 
 export const ML_MODEL_METRICS_V5 = {
   cv_accuracy:       0.9349,
@@ -28,7 +28,7 @@ export const ML_MODEL_METRICS_V5 = {
   version:           "v5.0.0-india-ncrb-2020-2023",
 };
 
-export const MOCK_HOTSPOTS: Hotspot[] = [
+export const MOCK_HOTSPOTS: V5City[] = [
   {
     id: 'hs_012',
     city: 'Delhi (overall)',
