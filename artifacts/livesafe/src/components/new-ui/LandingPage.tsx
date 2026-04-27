@@ -1,5 +1,5 @@
 import React from 'react'
-import { Shield, Zap, Map as MapIcon, Bell, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { motion } from 'motion/react'
 
 export default function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
@@ -8,9 +8,14 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
       {/* Header */}
       <nav className="max-w-7xl mx-auto px-6 pt-6">
         <div className="bg-white/80 backdrop-blur-md border border-slate-200 rounded-2xl px-6 py-3.5 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-blue-600" />
-            <span className="font-bold text-xl text-slate-900 tracking-tight">LiveSafe AI</span>
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 overflow-hidden rounded-xl border border-amber-200 bg-black shadow-sm">
+              <img src="/livesafe-logo.png" alt="LiveSafe logo" className="h-full w-full object-cover" />
+            </div>
+            <div>
+              <p className="font-bold text-xl leading-tight text-slate-900 tracking-tight">LiveSafe</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Predictive Safety Platform</p>
+            </div>
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Features</a>
