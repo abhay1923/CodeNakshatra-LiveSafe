@@ -2,7 +2,7 @@ import { type ReactNode, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/app/hooks/useAuth'
 import {
-  Shield, Map, AlertTriangle, BarChart3, Users, Settings,
+  Map, AlertTriangle, BarChart3, Users, Settings,
   Bell, LogOut, Menu, X, Activity, ChevronRight,
 } from 'lucide-react'
 import type { UserRole } from '@/types'
@@ -64,7 +64,7 @@ export default function AppLayout({ children, title, subtitle }: LayoutProps) {
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
-            <Shield size={22} color="#818cf8" />
+            <img src="/livesafe-logo.png" alt="LiveSafe logo" className="sidebar-logo-image" />
             <span>LiveSafe</span>
           </div>
           <button className="close-btn" onClick={() => setSidebarOpen(false)}>
@@ -187,6 +187,16 @@ export default function AppLayout({ children, title, subtitle }: LayoutProps) {
           font-weight: 800;
           color: #f1f5f9;
           letter-spacing: -0.02em;
+        }
+        .sidebar-logo-image {
+          width: 30px;
+          height: 30px;
+          object-fit: cover;
+          border-radius: 8px;
+          background: #000;
+          border: 1px solid rgba(251,191,36,.24);
+          box-shadow: 0 8px 20px rgba(245,158,11,.12);
+          flex-shrink: 0;
         }
         .close-btn {
           background: none;

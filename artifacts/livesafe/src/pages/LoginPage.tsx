@@ -2,7 +2,7 @@ import React, { useState, type FormEvent } from 'react'
 import { useAuth } from '@/app/hooks/useAuth'
 import { api } from '@/app/services/api'
 import {
-  Shield, Eye, EyeOff, AlertCircle, Loader2, UserPlus, LogIn, CheckCircle2,
+  Eye, EyeOff, AlertCircle, Loader2, UserPlus, LogIn, CheckCircle2,
   ShieldCheck, Briefcase,
 } from 'lucide-react'
 
@@ -97,7 +97,7 @@ export default function LoginPage() {
       <div className="login-container animate-fade-in">
 
         <div className="login-logo">
-          <div className="logo-icon"><Shield size={32} color="#818cf8" /></div>
+          <div className="logo-icon"><img src="/livesafe-logo.png" alt="LiveSafe logo" /></div>
           <div>
             <h1>LiveSafe</h1>
             <p>Predictive Public Safety — All India</p>
@@ -248,7 +248,8 @@ export default function LoginPage() {
         .login-bg{position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(99,102,241,.15) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(245,158,11,.08) 0%,transparent 50%),linear-gradient(180deg,#0f172a 0%,#1e1b4b 100%);z-index:-1}
         .login-container{width:100%;max-width:440px;display:flex;flex-direction:column;gap:1.1rem}
         .login-logo{display:flex;align-items:center;gap:1rem}
-        .logo-icon{width:56px;height:56px;background:rgba(99,102,241,.15);border:1px solid rgba(129,140,248,.3);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .logo-icon{width:56px;height:56px;background:#000;border:1px solid rgba(251,191,36,.24);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;box-shadow:0 10px 24px rgba(245,158,11,.12)}
+        .logo-icon img{width:100%;height:100%;object-fit:cover;display:block}
         .login-logo h1{margin:0;font-size:1.6rem;font-weight:800;color:#f1f5f9;letter-spacing:-.02em}
         .login-logo p{margin:0;font-size:.78rem;color:#64748b}
         .mode-tabs{display:flex;background:rgba(15,23,42,.6);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:4px;gap:4px}

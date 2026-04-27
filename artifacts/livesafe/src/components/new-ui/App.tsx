@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import {
-  Shield, LayoutDashboard, Map as MapIcon, Zap,
+  LayoutDashboard, Map as MapIcon, Zap,
   BarChart3, Settings, LogOut, Search, Bell, Menu, X,
   AlertTriangle, Siren, Activity, Brain, Users, PhoneCall,
 } from 'lucide-react'
@@ -163,14 +163,8 @@ export default function NewApp() {
           >
             {/* Logo */}
             <div className="p-5 flex items-center gap-3 border-b border-white/5 shrink-0">
-              <div
-                className="p-2.5 rounded-xl shrink-0 shadow-lg"
-                style={{
-                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                  boxShadow: '0 8px 24px rgba(99,102,241,0.35)',
-                }}
-              >
-                <Shield className="w-5 h-5 text-white" strokeWidth={2.5} />
+              <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-amber-400/25 bg-black shadow-lg shadow-amber-500/10">
+                <img src="/livesafe-logo.png" alt="LiveSafe logo" className="h-full w-full object-cover" />
               </div>
               {expanded && (
                 <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}>
