@@ -70,6 +70,13 @@ export type CrimeType =
   | 'drug_offense'
   | 'kidnapping'
   | 'extortion'
+  // Real NCRB crime-head categories (district-year NCRB data only reports
+  // at this granularity, so hotspots derived from it use these rather than
+  // inventing a specific offence type NCRB doesn't break out):
+  | 'ipc_crime'
+  | 'sll_crime'
+  | 'crime_against_women'
+  | 'crime_against_children'
   | 'other'
 
 export interface Incident {
@@ -81,7 +88,7 @@ export interface Incident {
   severity: SeverityLevel
   status: IncidentStatus
   reported_by: string
-  verified_by?: string
+  verified_by?: string | null
   created_at: string
 }
 

@@ -274,7 +274,7 @@ export default function HotspotMapNew() {
                       </tr>
                       <tr>
                         <td colSpan={2} style={{ color: '#64748b', padding: '4px 0 2px', fontSize: 11 }}>
-                          <strong>Crimes:</strong> {hotspot.predicted_crimes.map(c => c.replace('_', ' ')).join(', ')}
+                          <strong>Crimes:</strong> {hotspot.predicted_crimes.map(c => c.replace(/_/g, ' ')).join(', ')}
                         </td>
                       </tr>
                     </tbody>

@@ -49,6 +49,9 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
   if (!user) {
     return res.status(401).json({ message: "Invalid or expired session" });
   }
+  if (!user.isApproved || !user.isActive) {
+    return res.status(403).json({ message: "Account is not permitted to access this resource" });
+  }
   req.user = user;
   next();
 }

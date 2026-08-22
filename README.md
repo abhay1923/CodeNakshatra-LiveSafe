@@ -13,16 +13,16 @@
 
 <p align="center">
   <a href="#">
-    <img src="https://img.shields.io/badge/Powered%20by-XGBoost%20%2B%20LightGBM-3b82f6?style=for-the-badge&logo=python&logoColor=white" alt="ML Model" />
+    <img src="https://img.shields.io/badge/Model-GradientBoosting%20(scikit--learn)-3b82f6?style=for-the-badge&logo=python&logoColor=white" alt="ML Model" />
   </a>
   <a href="#">
-    <img src="https://img.shields.io/badge/Accuracy-96.5%25-22c55e?style=for-the-badge" alt="Accuracy" />
+    <img src="https://img.shields.io/badge/Holdout%20R²-0.886-22c55e?style=for-the-badge" alt="Holdout R2" />
   </a>
   <a href="#">
-    <img src="https://img.shields.io/badge/Coverage-117%20Cities-6366f1?style=for-the-badge" alt="Coverage" />
+    <img src="https://img.shields.io/badge/Coverage-445%20Real%20Geocoded%20Districts-6366f1?style=for-the-badge" alt="Coverage" />
   </a>
   <a href="#">
-    <img src="https://img.shields.io/badge/Data%20Source-NCRB%202001--2023-0ea5e9?style=for-the-badge" alt="Data Source" />
+    <img src="https://img.shields.io/badge/Data%20Source-NCRB%20District--Year%202010--2024-0ea5e9?style=for-the-badge" alt="Data Source" />
   </a>
 </p>
 
@@ -41,19 +41,22 @@
 
 ## 🎯 Overview
 
-**LiveSafe AI** is a next-generation public safety platform that leverages advanced machine learning to predict crime hotspots before they escalate. Built for Indian cities with data from the **National Crime Records Bureau (NCRB)**, our ensemble model delivers **96.5% cross-validated accuracy** across **117 cities** and **26 states**.
+**LiveSafe AI** is a next-generation public safety platform for Indian cities that visualizes real crime-risk data from the **National Crime Records Bureau (NCRB)** and forecasts near-term trends with a transparently-evaluated statistical model — **445 districts are real, geocoded NCRB data** (39% of 1,326 reported districts; the rest lack a matchable city in the open geocoding dataset used and are intentionally omitted rather than given invented coordinates).
 
-> 🔮 *Proactive safety through advanced data analysis. Anticipate risks before they happen.*
+> 🔮 *Proactive safety through real data analysis. Anticipate risks before they happen.*
+
+> **Data & model honesty note (read this):** earlier versions of this README and the shipped hotspot dataset described a "96.5% accuracy XGBoost+LightGBM+RandomForest ensemble" that never existed in this codebase — it was hand-authored demo data. That has been replaced with a real pipeline (see [`ml-pipeline/`](./ml-pipeline)) built from the NCRB district-year CSVs. The honest result: a GradientBoostingRegressor scores **R²=0.886** on a true 2023–2024 holdout, but a naive "next year = this year" baseline scores **R²=0.929** on the same holdout — district-level crime severity is highly persistent year-over-year, and the model does not yet decisively beat that baseline. See [`ml-pipeline/README.md`](./ml-pipeline/README.md) for full methodology, limitations, and how to reproduce or refresh these numbers.
 
 <div align="center">
 
 | Metric | Value |
 |--------|-------|
-| 🧠 **ML Accuracy** | 96.5% |
-| 🏙️ **Cities Covered** | 117 |
-| 📊 **Data Years** | 23 (NCRB 2001–2023) |
-| ⚡ **Model Type** | Random Forest + Gradient Boosting Ensemble |
-| 🔴 **Critical Zones** | Real-time tracking |
+| 🧠 **Holdout R² (severity forecast)** | 0.886 (naive persistence baseline: 0.929) |
+| 🧠 **Risk-class accuracy (holdout)** | 77.7% (naive persistence baseline: 82.5%) |
+| 🏙️ **Districts Covered (real, geocoded)** | 445 of 1,326 reported |
+| 📊 **Data Years** | NCRB district-year data, 2010–2024 |
+| ⚡ **Model Type** | GradientBoostingRegressor (scikit-learn) |
+| 🔴 **Critical Zones** | 40 districts at "critical" real NCRB severity |
 
 </div>
 
@@ -67,8 +70,8 @@
   <tr>
     <td width="50%" valign="top">
 
-### 🔮 AI Crime Prediction
-Machine learning ensemble (XGBoost + LightGBM) trained on 23 years of historical crime data. Predicts risk scores, crime types, and trend directions for every major Indian city.
+### 🔮 Real-Data Crime Risk
+A GradientBoostingRegressor trained on real NCRB district-year features (crime counts, state-percentile ranks, year-over-year growth) forecasts next-year severity, honestly evaluated against a naive persistence baseline. Risk scores shown on the map are the real observed NCRB severity, not the model's forecast.
 
 </td>
     <td width="50%" valign="top">
@@ -151,8 +154,8 @@ Multi-tier authentication system:
 
 ### Machine Learning
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![XGBoost](https://img.shields.io/badge/XGBoost-EB5424?style=for-the-badge)
-![LightGBM](https://img.shields.io/badge/LightGBM-9C5FD3?style=for-the-badge)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white)
+![pandas](https://img.shields.io/badge/pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
 
 ### DevOps & Tools
 ![PNPM](https://img.shields.io/badge/PNPM-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
@@ -326,40 +329,41 @@ pnpm --filter @workspace/api-server dev
 
 ## 📈 ML Model Details
 
-Our crime prediction engine uses a **stacked ensemble** approach:
+The real pipeline (`ml-pipeline/`) is a straightforward, honestly-evaluated forecasting model — not a stacked ensemble:
 
 ```
-┌─────────────────────────────────────────┐
-│         LiveSafe ML Pipeline            │
-├─────────────────────────────────────────┤
-│  Input: NCRB Crime Data (2001–2023)     │
-│           ↓                             │
-│  Feature Engineering                    │
-│  • City demographics                    │
-│  • Historical crime rates               │
-│  • Seasonal patterns                    │
-│  • Socio-economic indicators            │
-│           ↓                             │
-│  ┌─────────────┐    ┌─────────────┐     │
-│  │  XGBoost    │    │  LightGBM   │     │
-│  │  Regressor  │    │  Regressor  │     │
-│  └──────┬──────┘    └──────┬──────┘     │
-│         └────────┬─────────┘             │
-│                  ↓                        │
-│         Meta-Learner (Blending)          │
-│                  ↓                        │
-│  Output: Risk Score (0–100)             │
-│          • Crime Type Predictions       │
-│          • Trend Direction              │
-│          • Confidence Interval          │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│              ml-pipeline/ (real)                 │
+├───────────────────────────────────────────────────┤
+│  Input: ncrb_district_year_features.csv           │
+│         (1,326 districts × years 2010-2024)       │
+│           ↓                                       │
+│  01_build_master.py                                │
+│  • normalize district/state names                 │
+│  • geocode against real open dataset               │
+│    (445/1,326 districts matched → real lat/lon)    │
+│  • merge real Census 2011 population                │
+│           ↓                                       │
+│  02_train_model.py                                 │
+│  • GradientBoostingRegressor (scikit-learn)         │
+│  • 65 features: crime counts, state-percentile      │
+│    ranks, YoY growth, current severity              │
+│  • temporal holdout: train ≤2022, test 2023-2024    │
+│           ↓                                       │
+│  03_export_hotspots.py                              │
+│  Output: hotspots_real.json (445 real districts)    │
+│          state_summary_real.json (all 39 states)    │
+└─────────────────────────────────────────────────┘
 ```
 
-**Performance Metrics:**
-- **R² Score**: 0.965
-- **RMSE**: 4.23
-- **Cross-Validation**: 5-fold stratified
-- **Feature Importance**: Population density, unemployment rate, previous year crime rate, literacy rate
+**Honest performance (true 2023–2024 temporal holdout, n=1,895):**
+- **Severity R² Score**: 0.886 (5-fold CV on train period: 0.876 ± 0.005)
+- **Severity MAE**: 0.061
+- **Risk-class accuracy / precision / recall / F1**: 0.777 / 0.797 / 0.777 / 0.772
+- **Naive "next year = this year" baseline**: R²=0.929, accuracy=0.825 — the model does **not** decisively beat this baseline, which itself is a real, useful finding: district crime severity is highly persistent year-over-year.
+- **Top features by importance**: current severity (0.84), children-crime state-percentile (0.03), year (0.03), IPC state-percentile (0.03), IPC growth rate (0.02)
+
+There is no unemployment/poverty/chargesheet-rate data in the source CSVs, so earlier fabricated fields with those names have been removed rather than kept with fake numbers. Full methodology, limitations, and reproduction steps: [`ml-pipeline/README.md`](./ml-pipeline/README.md).
 
 ---
 
@@ -414,7 +418,9 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 - 📊 **National Crime Records Bureau (NCRB)** — Crime in India datasets
 - 🗺️ **OpenStreetMap & CARTO** — Map tiles
-- 🤖 **XGBoost & LightGBM** — Core ML libraries
+- 🤖 **scikit-learn & pandas** — Core ML/data pipeline libraries (see [`ml-pipeline/`](./ml-pipeline))
+- 🗺️ **Vynex/indian-cities-geodata** — Open district/city geocoding dataset
+- 📊 **Census of India 2011** — District population data
 - 🎨 **shadcn/ui** — Beautiful UI components
 
 ---

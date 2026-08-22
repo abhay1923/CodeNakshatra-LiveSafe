@@ -1,0 +1,392 @@
+[
+  {
+    "state": "Lakshadweep",
+    "lat": 10.5667,
+    "lon": 72.6417,
+    "mean_severity": 75.6,
+    "max_district_severity": 77.5,
+    "districts_reported": 4,
+    "critical_districts": 0,
+    "high_districts": 4
+  },
+  {
+    "state": "D N Haveli",
+    "lat": 20.3974,
+    "lon": 72.8328,
+    "mean_severity": 74.8,
+    "max_district_severity": 75.0,
+    "districts_reported": 4,
+    "critical_districts": 0,
+    "high_districts": 4
+  },
+  {
+    "state": "Puducherry",
+    "lat": 11.9416,
+    "lon": 79.8083,
+    "mean_severity": 71.4,
+    "max_district_severity": 100.0,
+    "districts_reported": 6,
+    "critical_districts": 2,
+    "high_districts": 1
+  },
+  {
+    "state": "Daman Diu",
+    "lat": 20.3974,
+    "lon": 72.8328,
+    "mean_severity": 71.1,
+    "max_district_severity": 88.3,
+    "districts_reported": 4,
+    "critical_districts": 1,
+    "high_districts": 1
+  },
+  {
+    "state": "Chandigarh",
+    "lat": 30.7333,
+    "lon": 76.7794,
+    "mean_severity": 69.8,
+    "max_district_severity": 83.3,
+    "districts_reported": 5,
+    "critical_districts": 0,
+    "high_districts": 4
+  },
+  {
+    "state": "Ladakh",
+    "lat": 34.1526,
+    "lon": 77.5771,
+    "mean_severity": 66.7,
+    "max_district_severity": 97.5,
+    "districts_reported": 3,
+    "critical_districts": 1,
+    "high_districts": 0
+  },
+  {
+    "state": "Goa",
+    "lat": 15.4909,
+    "lon": 73.8278,
+    "mean_severity": 65.4,
+    "max_district_severity": 100.0,
+    "districts_reported": 7,
+    "critical_districts": 1,
+    "high_districts": 2
+  },
+  {
+    "state": "A N Islands",
+    "lat": 11.6234,
+    "lon": 92.7265,
+    "mean_severity": 65.0,
+    "max_district_severity": 100.0,
+    "districts_reported": 11,
+    "critical_districts": 1,
+    "high_districts": 4
+  },
+  {
+    "state": "D N Haveli And Daman Diu",
+    "lat": 20.3974,
+    "lon": 72.8328,
+    "mean_severity": 62.5,
+    "max_district_severity": 100.0,
+    "districts_reported": 4,
+    "critical_districts": 1,
+    "high_districts": 1
+  },
+  {
+    "state": "Sikkim",
+    "lat": 27.3314,
+    "lon": 88.6138,
+    "mean_severity": 60.8,
+    "max_district_severity": 99.1,
+    "districts_reported": 14,
+    "critical_districts": 1,
+    "high_districts": 5
+  },
+  {
+    "state": "Uttarakhand",
+    "lat": 30.3165,
+    "lon": 78.0322,
+    "mean_severity": 56.3,
+    "max_district_severity": 100.0,
+    "districts_reported": 18,
+    "critical_districts": 2,
+    "high_districts": 5
+  },
+  {
+    "state": "Tripura",
+    "lat": 23.8315,
+    "lon": 91.2868,
+    "mean_severity": 55.5,
+    "max_district_severity": 100.0,
+    "districts_reported": 15,
+    "critical_districts": 2,
+    "high_districts": 3
+  },
+  {
+    "state": "Meghalaya",
+    "lat": 25.5788,
+    "lon": 91.8933,
+    "mean_severity": 54.8,
+    "max_district_severity": 100.0,
+    "districts_reported": 19,
+    "critical_districts": 2,
+    "high_districts": 4
+  },
+  {
+    "state": "Manipur",
+    "lat": 24.817,
+    "lon": 93.9368,
+    "mean_severity": 54.1,
+    "max_district_severity": 100.0,
+    "districts_reported": 23,
+    "critical_districts": 2,
+    "high_districts": 5
+  },
+  {
+    "state": "Nagaland",
+    "lat": 25.6751,
+    "lon": 94.1086,
+    "mean_severity": 53.8,
+    "max_district_severity": 100.0,
+    "districts_reported": 21,
+    "critical_districts": 2,
+    "high_districts": 4
+  },
+  {
+    "state": "Mizoram",
+    "lat": 23.7307,
+    "lon": 92.7173,
+    "mean_severity": 53.7,
+    "max_district_severity": 100.0,
+    "districts_reported": 19,
+    "critical_districts": 1,
+    "high_districts": 6
+  },
+  {
+    "state": "West Bengal",
+    "lat": 22.5726,
+    "lon": 88.3639,
+    "mean_severity": 53.4,
+    "max_district_severity": 100.0,
+    "districts_reported": 64,
+    "critical_districts": 3,
+    "high_districts": 15
+  },
+  {
+    "state": "Gujarat",
+    "lat": 23.0225,
+    "lon": 72.5714,
+    "mean_severity": 53.2,
+    "max_district_severity": 100.0,
+    "districts_reported": 64,
+    "critical_districts": 3,
+    "high_districts": 18
+  },
+  {
+    "state": "Andhra Pradesh",
+    "lat": 16.5062,
+    "lon": 80.648,
+    "mean_severity": 52.4,
+    "max_district_severity": 84.9,
+    "districts_reported": 38,
+    "critical_districts": 0,
+    "high_districts": 9
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "lat": 27.0844,
+    "lon": 93.6053,
+    "mean_severity": 52.4,
+    "max_district_severity": 100.0,
+    "districts_reported": 35,
+    "critical_districts": 2,
+    "high_districts": 7
+  },
+  {
+    "state": "Himachal Pradesh",
+    "lat": 31.1048,
+    "lon": 77.1734,
+    "mean_severity": 52.3,
+    "max_district_severity": 100.0,
+    "districts_reported": 23,
+    "critical_districts": 1,
+    "high_districts": 5
+  },
+  {
+    "state": "Telangana",
+    "lat": 17.385,
+    "lon": 78.4867,
+    "mean_severity": 52.3,
+    "max_district_severity": 100.0,
+    "districts_reported": 42,
+    "critical_districts": 4,
+    "high_districts": 7
+  },
+  {
+    "state": "Jharkhand",
+    "lat": 23.3441,
+    "lon": 85.3096,
+    "mean_severity": 52.1,
+    "max_district_severity": 100.0,
+    "districts_reported": 31,
+    "critical_districts": 3,
+    "high_districts": 8
+  },
+  {
+    "state": "Odisha",
+    "lat": 20.2961,
+    "lon": 85.8245,
+    "mean_severity": 51.9,
+    "max_district_severity": 100.0,
+    "districts_reported": 41,
+    "critical_districts": 3,
+    "high_districts": 10
+  },
+  {
+    "state": "Punjab",
+    "lat": 30.7333,
+    "lon": 76.7794,
+    "mean_severity": 51.9,
+    "max_district_severity": 100.0,
+    "districts_reported": 47,
+    "critical_districts": 2,
+    "high_districts": 14
+  },
+  {
+    "state": "Karnataka",
+    "lat": 12.9716,
+    "lon": 77.5946,
+    "mean_severity": 51.8,
+    "max_district_severity": 100.0,
+    "districts_reported": 61,
+    "critical_districts": 4,
+    "high_districts": 12
+  },
+  {
+    "state": "Delhi",
+    "lat": 28.6139,
+    "lon": 77.209,
+    "mean_severity": 51.5,
+    "max_district_severity": 100.0,
+    "districts_reported": 29,
+    "critical_districts": 1,
+    "high_districts": 8
+  },
+  {
+    "state": "Kerala",
+    "lat": 8.5241,
+    "lon": 76.9366,
+    "mean_severity": 51.2,
+    "max_district_severity": 100.0,
+    "districts_reported": 33,
+    "critical_districts": 1,
+    "high_districts": 7
+  },
+  {
+    "state": "Chhattisgarh",
+    "lat": 21.2514,
+    "lon": 81.6296,
+    "mean_severity": 51.0,
+    "max_district_severity": 100.0,
+    "districts_reported": 43,
+    "critical_districts": 3,
+    "high_districts": 11
+  },
+  {
+    "state": "Maharashtra",
+    "lat": 19.076,
+    "lon": 72.8777,
+    "mean_severity": 50.9,
+    "max_district_severity": 100.0,
+    "districts_reported": 62,
+    "critical_districts": 5,
+    "high_districts": 12
+  },
+  {
+    "state": "Madhya Pradesh",
+    "lat": 23.2599,
+    "lon": 77.4126,
+    "mean_severity": 50.8,
+    "max_district_severity": 100.0,
+    "districts_reported": 75,
+    "critical_districts": 9,
+    "high_districts": 8
+  },
+  {
+    "state": "Haryana",
+    "lat": 30.7333,
+    "lon": 76.7794,
+    "mean_severity": 50.7,
+    "max_district_severity": 100.0,
+    "districts_reported": 36,
+    "critical_districts": 3,
+    "high_districts": 8
+  },
+  {
+    "state": "Delhi Ut",
+    "lat": 28.6139,
+    "lon": 77.209,
+    "mean_severity": 50.5,
+    "max_district_severity": 83.4,
+    "districts_reported": 29,
+    "critical_districts": 0,
+    "high_districts": 6
+  },
+  {
+    "state": "Tamil Nadu",
+    "lat": 13.0827,
+    "lon": 80.2707,
+    "mean_severity": 50.4,
+    "max_district_severity": 100.0,
+    "districts_reported": 69,
+    "critical_districts": 4,
+    "high_districts": 15
+  },
+  {
+    "state": "Bihar",
+    "lat": 25.5941,
+    "lon": 85.1376,
+    "mean_severity": 49.7,
+    "max_district_severity": 100.0,
+    "districts_reported": 54,
+    "critical_districts": 4,
+    "high_districts": 12
+  },
+  {
+    "state": "Assam",
+    "lat": 26.1445,
+    "lon": 91.7362,
+    "mean_severity": 49.6,
+    "max_district_severity": 100.0,
+    "districts_reported": 50,
+    "critical_districts": 5,
+    "high_districts": 9
+  },
+  {
+    "state": "Uttar Pradesh",
+    "lat": 26.8467,
+    "lon": 80.9462,
+    "mean_severity": 48.8,
+    "max_district_severity": 100.0,
+    "districts_reported": 97,
+    "critical_districts": 4,
+    "high_districts": 21
+  },
+  {
+    "state": "Rajasthan",
+    "lat": 26.9124,
+    "lon": 75.7873,
+    "mean_severity": 48.6,
+    "max_district_severity": 100.0,
+    "districts_reported": 77,
+    "critical_districts": 3,
+    "high_districts": 16
+  },
+  {
+    "state": "Jammu Kashmir",
+    "lat": 34.0837,
+    "lon": 74.7973,
+    "mean_severity": 48.0,
+    "max_district_severity": 100.0,
+    "districts_reported": 49,
+    "critical_districts": 3,
+    "high_districts": 8
+  }
+]

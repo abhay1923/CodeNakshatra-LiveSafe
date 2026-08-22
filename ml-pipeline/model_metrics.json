@@ -1,0 +1,57 @@
+{
+  "model": "GradientBoostingRegressor (scikit-learn)",
+  "target": "target_severity (next-year composite severity score, 0-1)",
+  "train_period": "rows with target_year <= 2022",
+  "test_period": "rows with target_year in {2023, 2024} (true temporal holdout)",
+  "train_rows": 4888,
+  "test_rows": 1895,
+  "feature_count": 65,
+  "test_r2": 0.8855,
+  "test_mae": 0.0614,
+  "test_rmse": 0.0871,
+  "train_r2": 0.9111,
+  "cv_r2_mean_5fold_on_train": 0.8761,
+  "cv_r2_std_5fold_on_train": 0.0051,
+  "risk_class_accuracy_on_holdout": 0.7768,
+  "risk_class_precision_weighted_on_holdout": 0.7965,
+  "risk_class_recall_weighted_on_holdout": 0.7768,
+  "risk_class_weighted_f1_on_holdout": 0.7722,
+  "naive_persistence_baseline_r2": 0.9288,
+  "naive_persistence_baseline_mae": 0.0484,
+  "naive_persistence_risk_class_accuracy": 0.8253,
+  "naive_persistence_risk_class_f1": 0.8246,
+  "top_features": [
+    {
+      "feature": "severity",
+      "importance": 0.8398
+    },
+    {
+      "feature": "children_state_pct",
+      "importance": 0.0344
+    },
+    {
+      "feature": "year",
+      "importance": 0.0275
+    },
+    {
+      "feature": "ipc_state_pct",
+      "importance": 0.025
+    },
+    {
+      "feature": "ipc_growth",
+      "importance": 0.0203
+    },
+    {
+      "feature": "ipc_prev",
+      "importance": 0.0105
+    },
+    {
+      "feature": "women_state_pct",
+      "importance": 0.01
+    },
+    {
+      "feature": "women_growth",
+      "importance": 0.0048
+    }
+  ]
+}

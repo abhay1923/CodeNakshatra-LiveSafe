@@ -1,18 +1,17 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/app/hooks/useAuth'
 import type { UserRole } from '@/types'
 
-// Pages (lazy-loaded in a real prod app; kept synchronous here for clarity)
-import LoginPage from '@/pages/LoginPage'
-import NewApp from '@/components/new-ui/App'
-import ReportIncidentPage from '@/pages/ReportIncidentPage'
-import SOSAlertsPage from '@/pages/SOSAlertsPage'
-import AnalyticsPage from '@/pages/AnalyticsPage'
-import MLDashboardPage from '@/pages/MLDashboardPage'
-import UserManagementPage from '@/pages/UserManagementPage'
-import SettingsPage from '@/pages/SettingsPage'
-import SuperAdminRequestsPage from '@/pages/SuperAdminRequestsPage'
+const LoginPage = React.lazy(() => import('@/pages/LoginPage'))
+const NewApp = React.lazy(() => import('@/components/new-ui/App'))
+const ReportIncidentPage = React.lazy(() => import('@/pages/ReportIncidentPage'))
+const SOSAlertsPage = React.lazy(() => import('@/pages/SOSAlertsPage'))
+const AnalyticsPage = React.lazy(() => import('@/pages/AnalyticsPage'))
+const MLDashboardPage = React.lazy(() => import('@/pages/MLDashboardPage'))
+const UserManagementPage = React.lazy(() => import('@/pages/UserManagementPage'))
+const SettingsPage = React.lazy(() => import('@/pages/SettingsPage'))
+const SuperAdminRequestsPage = React.lazy(() => import('@/pages/SuperAdminRequestsPage'))
 
 // ---- Protected Route wrapper ----
 interface ProtectedRouteProps {
@@ -50,6 +49,20 @@ function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   return <>{children}</>
 }
 
+function LoadingScreen() {
+  return (
+    <div style={{
+      minHeight: '100dvh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
+    }}>
+      <div className="spinner" style={{ width: 40, height: 40, borderWidth: 4 }} />
+    </div>
+  )
+}
+
 // ---- Default redirect based on role ----
 function RoleRedirect() {
   const { user } = useAuth()
@@ -60,9 +73,10 @@ function RoleRedirect() {
 
 export default function App() {
   return (
-    <Routes>
-      {/* Public */}
-      <Route path="/login" element={<LoginRedirect />} />
+    <Suspense fallback={<LoadingScreen />}>
+      <Routes>
+        {/* Public */}
+        <Route path="/login" element={<LoginRedirect />} />
 
       {/* Protected — all authenticated users */}
       <Route
@@ -135,9 +149,10 @@ export default function App() {
         }
       />
 
-      {/* Catch-all */}
-<Route path="*" element={<RoleRedirect />} />
-    </Routes>
+        {/* Catch-all */}
+        <Route path="*" element={<RoleRedirect />} />
+      </Routes>
+    </Suspense>
   )
 }
 

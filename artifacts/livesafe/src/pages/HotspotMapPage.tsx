@@ -144,7 +144,7 @@ function LeafletMap({
         const trendLabel = h.trend ? TREND_ICONS[h.trend] : '➡️ Stable'
 
         const crimeTags = h.predicted_crimes.map((c: string) =>
-          `<span style="background:rgba(255,255,255,0.1);color:#e2e8f0;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;text-transform:capitalize;border:1px solid rgba(255,255,255,0.2);display:inline-block;margin:2px">${c.replace('_', ' ')}</span>`
+          `<span style="background:rgba(255,255,255,0.1);color:#e2e8f0;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;text-transform:capitalize;border:1px solid rgba(255,255,255,0.2);display:inline-block;margin:2px">${c.replace(/_/g, ' ')}</span>`
         ).join('')
 
         // Score bar

@@ -3,7 +3,6 @@ import { useState, type FormEvent } from 'react'
 import { AlertTriangle, MapPin, CheckCircle, Loader2, Info } from 'lucide-react'
 import AppLayout from '@/components/layout/AppLayout'
 import { api } from '@/app/services/api'
-import { useAuth } from '@/app/hooks/useAuth'
 import type { CrimeType, SeverityLevel } from '@/types'
 
 const CRIME_TYPES: { value: CrimeType; label: string; emoji: string }[] = [
@@ -25,7 +24,6 @@ const SEVERITIES: { value: SeverityLevel; label: string; color: string }[] = [
 ]
 
 export default function ReportIncidentPage() {
-  const { user } = useAuth()
   const [form, setForm] = useState({
     type: '' as CrimeType | '',
     description: '',
@@ -75,7 +73,6 @@ export default function ReportIncidentPage() {
         latitude: parseFloat(form.latitude),
         longitude: parseFloat(form.longitude),
         severity: form.severity,
-        reported_by: user?.id ?? 'anonymous',
       })
       setSubmitted(true)
     } catch (err) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { Suspense, useState, useEffect } from 'react'
 import {
   Shield, LayoutDashboard, Map as MapIcon, Zap,
   BarChart3, Settings, LogOut, Search, Bell, Menu, X,
@@ -10,11 +10,11 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/app/hooks/useAuth'
 import type { Screen, UserRole } from '@/types'
 
-import HotspotMap from '@/components/HotspotMapNew'
-import Dashboard from '@/components/new-ui/Dashboard'
-import Simulation from '@/components/new-ui/Simulation'
-import Reports from '@/components/new-ui/Reports'
-import SettingsPage from '@/components/new-ui/SettingsPage'
+const HotspotMap = React.lazy(() => import('@/components/HotspotMapNew'))
+const Dashboard = React.lazy(() => import('@/components/new-ui/Dashboard'))
+const Simulation = React.lazy(() => import('@/components/new-ui/Simulation'))
+const Reports = React.lazy(() => import('@/components/new-ui/Reports'))
+const SettingsPage = React.lazy(() => import('@/components/new-ui/SettingsPage'))
 
 interface NavItemConfig {
   icon: React.ReactNode
@@ -40,12 +40,14 @@ const ROLE_LABELS: Record<UserRole, string> = {
   citizen: 'Citizen',
   police:  'Police Officer',
   admin:   'Administrator',
+  super_admin: 'Super Admin',
 }
 
 const ROLE_COLORS: Record<UserRole, string> = {
   citizen: '#22c55e',
   police:  '#38bdf8',
   admin:   '#f59e0b',
+  super_admin: '#a78bfa',
 }
 
 type InternalScreen = 'dashboard' | 'hotspot' | 'simulation' | 'reports' | 'settings'
@@ -310,11 +312,21 @@ export default function NewApp() {
               transition={{ duration: 0.2 }}
               className="h-full"
             >
-              {renderScreen()}
+              <Suspense fallback={<ScreenFallback />}>
+                {renderScreen()}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </main>
       </div>
+    </div>
+  )
+}
+
+function ScreenFallback() {
+  return (
+    <div className="min-h-[320px] flex items-center justify-center">
+      <div className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }} />
     </div>
   )
 }
@@ -355,7 +367,7 @@ function NavItemButton({
         />
       )}
       <div className="shrink-0">
-        {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}
+        {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5' })}
       </div>
       {!collapsed && (
         <span className="font-medium text-sm whitespace-nowrap flex-1 text-left">{label}</span>

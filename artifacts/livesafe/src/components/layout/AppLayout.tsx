@@ -15,19 +15,20 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Hotspot Map',    path: '/map',        icon: <Map size={18} />,           roles: ['citizen', 'police', 'admin'] },
+  { label: 'Hotspot Map',    path: '/map',        icon: <Map size={18} />,           roles: ['citizen', 'police', 'admin', 'super_admin'] },
   { label: 'Report Incident',path: '/report',     icon: <AlertTriangle size={18} />, roles: ['citizen'] },
   { label: 'SOS Alerts',     path: '/sos',        icon: <Bell size={18} />,          roles: ['police', 'admin'] },
   { label: 'Analytics',      path: '/analytics',  icon: <BarChart3 size={18} />,     roles: ['police', 'admin'] },
   { label: 'ML Dashboard',   path: '/ml',         icon: <Activity size={18} />,      roles: ['admin'] },
   { label: 'User Management',path: '/users',      icon: <Users size={18} />,         roles: ['admin'] },
-  { label: 'Settings',       path: '/settings',   icon: <Settings size={18} />,      roles: ['citizen', 'police', 'admin'] },
+  { label: 'Settings',       path: '/settings',   icon: <Settings size={18} />,      roles: ['citizen', 'police', 'admin', 'super_admin'] },
 ]
 
 const ROLE_COLORS: Record<UserRole, string> = {
   citizen: '#22c55e',
   police:  '#38bdf8',
   admin:   '#f59e0b',
+  super_admin: '#a78bfa',
 }
 
 interface LayoutProps {

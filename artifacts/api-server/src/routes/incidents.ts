@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, incidentsTable } from "@workspace/db";
 import { eq, desc, and, gte, lte, sql, count } from "drizzle-orm";
 import { z } from "zod";
-import { requireAuth, type AuthedRequest } from "../lib/auth";
+import { requireAuth, requireRole, type AuthedRequest } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -37,7 +37,7 @@ const listSchema = z.object({
   limit: z.coerce.number().int().positive().max(500).optional(),
 });
 
-router.get("/incidents", async (req, res) => {
+router.get("/incidents", requireAuth, async (req, res) => {
   const parsed = listSchema.safeParse(req.query);
   if (!parsed.success) return res.status(400).json({ message: "Invalid query" });
   const { type, severity, status, from, to, limit } = parsed.data;
@@ -59,7 +59,7 @@ router.get("/incidents", async (req, res) => {
   res.json(rows.map(serialize));
 });
 
-router.get("/incidents/stats", async (_req, res) => {
+router.get("/incidents/stats", requireAuth, requireRole("police", "admin"), async (_req, res) => {
   const total = await db.select({ c: count() }).from(incidentsTable);
   const byType = await db
     .select({ type: incidentsTable.type, c: count() })
@@ -104,7 +104,7 @@ const createSchema = z.object({
   severity: z.enum(SEVERITIES).optional(),
 });
 
-router.post("/incidents", requireAuth, async (req: AuthedRequest, res) => {
+router.post("/incidents", requireAuth, requireRole("citizen"), async (req: AuthedRequest, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: "Invalid input", errors: parsed.error.issues });
   const [row] = await db

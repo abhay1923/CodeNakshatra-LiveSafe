@@ -1,6 +1,4 @@
 import { pgTable, serial, text, doublePrecision, timestamp, integer } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
 
 export const sosAlertsTable = pgTable("sos_alerts", {
   id: serial("id").primaryKey(),
@@ -19,17 +17,5 @@ export const sosAlertsTable = pgTable("sos_alerts", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const insertSosAlertSchema = createInsertSchema(sosAlertsTable).omit({
-  id: true,
-  createdAt: true,
-  acknowledgedAt: true,
-  resolvedAt: true,
-  locationUpdatedAt: true,
-  currentLatitude: true,
-  currentLongitude: true,
-  status: true,
-  assignedOfficer: true,
-  responseTimeSeconds: true,
-});
-export type InsertSosAlert = z.infer<typeof insertSosAlertSchema>;
+export type InsertSosAlert = typeof sosAlertsTable.$inferInsert;
 export type SosAlert = typeof sosAlertsTable.$inferSelect;

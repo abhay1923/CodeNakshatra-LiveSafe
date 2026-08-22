@@ -56,7 +56,7 @@ export default function SettingsPage() {
                   : undefined
               }
             >
-              {React.cloneElement(item.icon as React.ReactElement, { className: 'w-4.5 h-4.5' })}
+              {React.cloneElement(item.icon as React.ReactElement<{ className?: string }>, { className: 'w-4.5 h-4.5' })}
               {item.label}
             </button>
           ))}

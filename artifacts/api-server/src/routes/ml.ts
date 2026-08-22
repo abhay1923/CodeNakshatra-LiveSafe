@@ -16,19 +16,27 @@ const router: IRouter = Router();
 // seasonal effects observed in Indian urban crime data.
 // ---------------------------------------------------------------
 
+// baseRisk values are the real `severity` composite score (0-100, a
+// within-state percentile blend across IPC / SLL / crimes-against-women /
+// crimes-against-children / cyber-crime counts) computed from
+// ncrb_district_year_features.csv for each city's matching NCRB district
+// (latest reported year; Delhi NCR uses the mean across its real police
+// districts since NCRB reports Delhi by zone, not one "Delhi" district).
+// Previously these 12 numbers were hand-typed estimates; see
+// /ml-pipeline/README.md for how they were recomputed from real data.
 const KNOWN_HIGH_RISK_AREAS: Array<{ name: string; lat: number; lon: number; baseRisk: number; crimes: string[] }> = [
-  { name: "Delhi NCR",    lat: 28.6139, lon: 77.2090, baseRisk: 72, crimes: ["theft", "robbery", "harassment"] },
-  { name: "Mumbai",       lat: 19.0760, lon: 72.8777, baseRisk: 68, crimes: ["theft", "fraud", "harassment"] },
-  { name: "Bengaluru",    lat: 12.9716, lon: 77.5946, baseRisk: 58, crimes: ["cybercrime", "fraud", "theft"] },
-  { name: "Chennai",      lat: 13.0827, lon: 80.2707, baseRisk: 54, crimes: ["theft", "harassment"] },
-  { name: "Kolkata",      lat: 22.5726, lon: 88.3639, baseRisk: 60, crimes: ["theft", "robbery"] },
-  { name: "Hyderabad",    lat: 17.3850, lon: 78.4867, baseRisk: 56, crimes: ["cybercrime", "theft"] },
-  { name: "Ahmedabad",    lat: 23.0225, lon: 72.5714, baseRisk: 50, crimes: ["theft", "vandalism"] },
-  { name: "Pune",         lat: 18.5204, lon: 73.8567, baseRisk: 48, crimes: ["theft", "vandalism"] },
-  { name: "Jaipur",       lat: 26.9124, lon: 75.7873, baseRisk: 52, crimes: ["theft", "harassment"] },
-  { name: "Lucknow",      lat: 26.8467, lon: 80.9462, baseRisk: 55, crimes: ["robbery", "assault"] },
-  { name: "Patna",        lat: 25.5941, lon: 85.1376, baseRisk: 64, crimes: ["robbery", "assault"] },
-  { name: "Chandigarh",   lat: 30.7333, lon: 76.7794, baseRisk: 38, crimes: ["theft"] },
+  { name: "Delhi NCR",    lat: 28.6139, lon: 77.2090, baseRisk: 65, crimes: ["ipc_crime", "sll_crime", "crime_against_women"] },
+  { name: "Mumbai",       lat: 19.0760, lon: 72.8777, baseRisk: 57, crimes: ["ipc_crime", "sll_crime"] },
+  { name: "Bengaluru",    lat: 12.9716, lon: 77.5946, baseRisk: 97, crimes: ["ipc_crime", "sll_crime", "cybercrime"] },
+  { name: "Chennai",      lat: 13.0827, lon: 80.2707, baseRisk: 98, crimes: ["ipc_crime", "sll_crime"] },
+  { name: "Kolkata",      lat: 22.5726, lon: 88.3639, baseRisk: 94, crimes: ["ipc_crime", "sll_crime"] },
+  { name: "Hyderabad",    lat: 17.3850, lon: 78.4867, baseRisk: 92, crimes: ["sll_crime", "ipc_crime"] },
+  { name: "Ahmedabad",    lat: 23.0225, lon: 72.5714, baseRisk: 98, crimes: ["ipc_crime", "sll_crime"] },
+  { name: "Pune",         lat: 18.5204, lon: 73.8567, baseRisk: 82, crimes: ["ipc_crime", "sll_crime"] },
+  { name: "Jaipur",       lat: 26.9124, lon: 75.7873, baseRisk: 64, crimes: ["ipc_crime", "crime_against_women"] },
+  { name: "Lucknow",      lat: 26.8467, lon: 80.9462, baseRisk: 98, crimes: ["sll_crime", "crime_against_women"] },
+  { name: "Patna",        lat: 25.5941, lon: 85.1376, baseRisk: 98, crimes: ["ipc_crime", "sll_crime"] },
+  { name: "Chandigarh",   lat: 30.7333, lon: 76.7794, baseRisk: 73, crimes: ["ipc_crime"] },
 ];
 
 function haversineKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }) {
@@ -139,19 +147,38 @@ router.get("/ml/metrics", async (_req, res) => {
 
   const sample = Number(total[0]?.c ?? 0);
 
+  // Honest metrics from a GradientBoostingRegressor trained on real NCRB
+  // district-year features (children/cyber/ipc/sll/women counts, state-
+  // percentile ranks, growth rates) to forecast next-year severity, scored
+  // on a true temporal holdout: train on target_year<=2022 (4,888 rows),
+  // test on target_year in {2023,2024} (1,895 rows). Risk-class
+  // accuracy/precision/recall/f1 bucket the predicted severity into the
+  // same low/medium/high/critical bands the app already uses.
+  //
+  // Important honesty note: a naive "next year = this year" persistence
+  // baseline scores R²=0.929 / accuracy=0.825 on the SAME holdout — this
+  // model does not decisively beat that baseline, because district crime
+  // severity is highly persistent year-over-year in the source data.
+  // Full methodology + reproduction scripts: /ml-pipeline/README.md
   res.json({
-    accuracy: 0.9566,
-    precision: 0.9512,
-    recall: 0.9483,
-    f1_score: 0.9497,
+    accuracy: 0.7768,
+    precision: 0.7965,
+    recall: 0.7768,
+    f1_score: 0.7722,
     sample_count: sample,
     recent_30d_incidents: Number(recent[0]?.c ?? 0),
-    last_trained: "2024-09-14T00:00:00.000Z",
-    model_version: "v5.0-ensemble",
-    algorithm: "XGBoost(40%) + LightGBM(35%) + RandomForest(25%)",
-    cv_strategy: "StratifiedGroupKFold(k=5, groups=city)",
-    training_records: 2668,
-    feature_count: 28,
+    last_trained: new Date().toISOString(),
+    model_version: "ncrb-real-v1-gbr",
+    algorithm: "GradientBoostingRegressor (scikit-learn), 300 trees, depth 3",
+    cv_strategy: "5-fold KFold on train period + true temporal holdout (2023-2024)",
+    training_records: 4888,
+    holdout_records: 1895,
+    feature_count: 65,
+    holdout_r2: 0.8855,
+    holdout_mae: 0.0614,
+    naive_persistence_baseline_accuracy: 0.8253,
+    naive_persistence_baseline_r2: 0.9288,
+    data_source: "NCRB district-year crime data, 39 states/UTs, years 2010-2024",
   });
 });
 

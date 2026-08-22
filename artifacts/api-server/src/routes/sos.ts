@@ -8,7 +8,7 @@ import { sendWhatsAppMessage } from "../lib/whatsapp";
 const router: IRouter = Router();
 
 const createSchema = z.object({
-  user_id: z.string().min(1),
+  user_id: z.string().min(1).optional(),
   user_name: z.string().optional(),
   latitude: z.number(),
   longitude: z.number(),
@@ -70,22 +70,25 @@ function serialize(row: typeof sosAlertsTable.$inferSelect) {
   };
 }
 
-router.get("/sos", async (_req, res) => {
+router.get("/sos", requireAuth, requireRole("police", "admin"), async (_req, res) => {
   const rows = await db.select().from(sosAlertsTable).orderBy(desc(sosAlertsTable.createdAt));
   res.json(rows.map(serialize));
 });
 
-router.post("/sos", async (req, res) => {
+router.post("/sos", requireAuth, async (req: AuthedRequest, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ message: "Invalid payload", errors: parsed.error.issues });
   }
-  const { user_id, user_name, latitude, longitude } = parsed.data;
+  const { latitude, longitude } = parsed.data;
+  const user = req.user!;
+  const userId = String(user.id);
+  const userName = parsed.data.user_name ?? user.name;
   const [row] = await db
     .insert(sosAlertsTable)
     .values({
-      userId: user_id,
-      userName: user_name,
+      userId,
+      userName,
       latitude,
       longitude,
       currentLatitude: latitude,
@@ -96,34 +99,31 @@ router.post("/sos", async (req, res) => {
 
   // Notify citizen emergency contacts on WhatsApp (best-effort, non-blocking for SOS creation)
   let whatsappNotificationsSent = 0;
-  const numericUserId = Number(user_id);
-  if (!Number.isNaN(numericUserId)) {
-    const contacts = await db
-      .select()
-      .from(emergencyContactsTable)
-      .where(eq(emergencyContactsTable.userId, numericUserId));
+  const contacts = await db
+    .select()
+    .from(emergencyContactsTable)
+    .where(eq(emergencyContactsTable.userId, user.id));
 
-    if (contacts.length > 0) {
-      const mapsLink = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-      const message = [
-        "LIVE SAFE SOS ALERT",
-        `${user_name ?? "A citizen"} triggered an emergency SOS.`,
-        `Live location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
-        `Map: ${mapsLink}`,
-        "Please contact them immediately.",
-      ].join("\n");
+  if (contacts.length > 0) {
+    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    const message = [
+      "LIVE SAFE SOS ALERT",
+      `${userName} triggered an emergency SOS.`,
+      `Live location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+      `Map: ${mapsLink}`,
+      "Please contact them immediately.",
+    ].join("\n");
 
-      await Promise.all(
-        contacts.map(async (contact) => {
-          try {
-            await sendWhatsAppMessage(contact.phone, message);
-            whatsappNotificationsSent += 1;
-          } catch {
-            // Keep SOS flow resilient even if WhatsApp provider has transient issues.
-          }
-        }),
-      );
-    }
+    await Promise.all(
+      contacts.map(async (contact) => {
+        try {
+          await sendWhatsAppMessage(contact.phone, message);
+          whatsappNotificationsSent += 1;
+        } catch {
+          // Keep SOS flow resilient even if WhatsApp provider has transient issues.
+        }
+      }),
+    );
   }
 
   res.status(201).json({
@@ -132,13 +132,21 @@ router.post("/sos", async (req, res) => {
   });
 });
 
-router.post("/sos/:id/location", async (req, res) => {
+router.post("/sos/:id/location", requireAuth, async (req: AuthedRequest, res) => {
   const id = Number(req.params.id);
   if (Number.isNaN(id)) return res.status(400).json({ message: "Invalid id" });
   const parsed = locationSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ message: "Invalid payload" });
   }
+  const [existing] = await db.select().from(sosAlertsTable).where(eq(sosAlertsTable.id, id));
+  if (!existing) return res.status(404).json({ message: "Not found" });
+  const user = req.user!;
+  const canUpdate =
+    existing.userId === String(user.id) ||
+    user.role === "police" ||
+    user.role === "admin";
+  if (!canUpdate) return res.status(403).json({ message: "Forbidden" });
   const [row] = await db
     .update(sosAlertsTable)
     .set({
@@ -152,7 +160,7 @@ router.post("/sos/:id/location", async (req, res) => {
   res.json(serialize(row));
 });
 
-router.patch("/sos/:id/acknowledge", async (req, res) => {
+router.patch("/sos/:id/acknowledge", requireAuth, requireRole("police", "admin"), async (req: AuthedRequest, res) => {
   const id = Number(req.params.id);
   if (Number.isNaN(id)) return res.status(400).json({ message: "Invalid id" });
   const parsed = ackSchema.safeParse(req.body ?? {});
@@ -161,7 +169,7 @@ router.patch("/sos/:id/acknowledge", async (req, res) => {
     .update(sosAlertsTable)
     .set({
       status: "acknowledged",
-      assignedOfficer: officer ?? "Officer on duty",
+      assignedOfficer: officer ?? req.user!.name,
       acknowledgedAt: new Date(),
     })
     .where(eq(sosAlertsTable.id, id))
@@ -170,7 +178,7 @@ router.patch("/sos/:id/acknowledge", async (req, res) => {
   res.json(serialize(row));
 });
 
-router.patch("/sos/:id/resolve", async (req, res) => {
+router.patch("/sos/:id/resolve", requireAuth, requireRole("police", "admin"), async (req, res) => {
   const id = Number(req.params.id);
   if (Number.isNaN(id)) return res.status(400).json({ message: "Invalid id" });
   const [existing] = await db.select().from(sosAlertsTable).where(eq(sosAlertsTable.id, id));

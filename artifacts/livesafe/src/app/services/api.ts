@@ -49,6 +49,10 @@ const CrimeTypeSchema = z.enum([
   'drug_offense',
   'kidnapping',
   'extortion',
+  'ipc_crime',
+  'sll_crime',
+  'crime_against_women',
+  'crime_against_children',
   'other',
 ])
 
@@ -190,21 +194,30 @@ const MOCK_SOS_ALERTS: SOSAlert[] = [
   { id: 's3', user_id: 'u3', user_name: 'Anjali Verma', latitude: 28.5400, longitude: 77.3800, status: 'resolved', assigned_officer: 'Officer Kumar', response_time: 420, created_at: new Date(Date.now() - 3600000).toISOString() },
 ]
 
+// Honest metrics from a GradientBoostingRegressor trained on real NCRB
+// district-year features, evaluated on a true temporal holdout (train on
+// target_year<=2022, test on target_year in {2023,2024}). Risk-class
+// accuracy/precision/recall/f1 are computed by bucketing the model's
+// continuous severity prediction into the same low/medium/high/critical
+// bands the app already uses. See /ml-pipeline/model_metrics.json and
+// /ml-pipeline/README.md for full methodology, including an honesty note
+// that a naive "next year = this year" baseline scores comparably
+// (risk is highly persistent year-over-year in this data).
 const MOCK_ML_METRICS: MLMetrics = {
-  accuracy: 0.9650,
-  precision: 0.9412,
-  recall: 0.9288,
-  f1_score: 0.9348,
-  sample_count: 715,
+  accuracy: 0.7768,
+  precision: 0.7965,
+  recall: 0.7768,
+  f1_score: 0.7722,
+  sample_count: 6783,
   last_trained: new Date().toISOString(),
-  model_version: 'v4.0.0-india-expanded',
+  model_version: 'ncrb-real-v1-gbr',
 }
 
 const MOCK_STATS: DashboardStats = {
   total_incidents: 3847,
   resolved_incidents: 2964,
   active_sos_alerts: 12,
-  hotspot_count: 117,
+  hotspot_count: 445, // real geocoded NCRB districts, see hotspots_v5.ts
   response_time_avg: 7.4,
   crime_reduction_pct: 12.3,
 }
@@ -325,7 +338,7 @@ export const api = {
       risk_score: h.risk_score,
       classification: (h.risk_level as 'low' | 'medium' | 'high' | 'critical'),
       radius: h.radius_meters,
-      crime_count: Math.round(h.crime_rate_per_lakh * (h.population_lakh || 1)),
+      crime_count: h.total_crimes_reported,
       state: h.state,
       predicted_crimes: h.predicted_crimes as CrimeType[],
       primary_warning: h.primary_warning,
